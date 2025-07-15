@@ -182,13 +182,13 @@
                             @endif
                             
                             <!-- 悬停操作按钮 -->
-                            <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                 <button @click="editProduct({{ json_encode($product) }})" 
-                                        class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors">
+                                        class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
                                     <i class="bi bi-pencil text-blue-600"></i>
                                 </button>
                                 <button onclick="deleteProduct({{ $product->id }})" 
-                                        class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors">
+                                        class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
                                     <i class="bi bi-trash text-red-600"></i>
                                 </button>
                             </div>
@@ -255,6 +255,18 @@
                             @if($product->description)
                                 <p class="text-sm text-gray-600 line-clamp-2">{{ $product->description }}</p>
                             @endif
+                            
+                            <!-- 底部操作按钮 -->
+                            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
+                                <button @click="editProduct({{ json_encode($product) }})" 
+                                        class="px-3 py-1 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors">
+                                    <i class="bi bi-pencil mr-1"></i>编辑
+                                </button>
+                                <button onclick="deleteProduct({{ $product->id }})" 
+                                        class="px-3 py-1 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors">
+                                    <i class="bi bi-trash mr-1"></i>删除
+                                </button>
+                            </div>
                         </div>
                     </div>
                 @endforeach
