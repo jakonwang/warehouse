@@ -527,13 +527,13 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">商品名称 <span class="text-red-500">*</span></label>
-                                    <input type="text" name="name" x-model="editingItem.name" 
+                                    <input type="text" name="name" x-model="editingItem?.name" 
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">商品类型</label>
-                                    <select name="type" x-model="editingItem.type" 
+                                    <select name="type" x-model="editingItem?.type" 
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                                         <option value="standard">标准商品</option>
                                         <option value="blind_bag">盲袋商品</option>
@@ -543,26 +543,26 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">销售价格 <span class="text-red-500">*</span></label>
-                                        <input type="number" name="price" x-model="editingItem.price" step="0.01" min="0" 
+                                        <input type="number" name="price" x-model="editingItem?.price" step="0.01" min="0" 
                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">成本价格</label>
-                                        <input type="number" name="cost_price" x-model="editingItem.cost_price" step="0.01" min="0" 
+                                        <input type="number" name="cost_price" x-model="editingItem?.cost_price" step="0.01" min="0" 
                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">预警库存</label>
-                                    <input type="number" name="alert_stock" x-model="editingItem.alert_stock" min="0" 
+                                    <input type="number" name="alert_stock" x-model="editingItem?.alert_stock" min="0" 
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">商品分类</label>
-                                    <select name="category" x-model="editingItem.category" 
+                                    <select name="category" x-model="editingItem?.category" 
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                         <option value="">请选择分类</option>
                                         @foreach($categories as $category)
@@ -583,12 +583,12 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">商品描述</label>
-                                    <textarea name="description" x-model="editingItem.description" rows="3" 
+                                    <textarea name="description" x-model="editingItem?.description" rows="3" 
                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                                 </div>
 
                                 <div class="flex items-center">
-                                    <input type="checkbox" name="is_active" :checked="editingItem.is_active" value="1" id="edit_is_active" 
+                                    <input type="checkbox" name="is_active" :checked="editingItem?.is_active" value="1" id="edit_is_active" 
                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                     <label for="edit_is_active" class="ml-2 block text-sm text-gray-900">启用商品</label>
                                 </div>

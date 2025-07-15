@@ -44,6 +44,22 @@ Route::get('/debug-test', function () {
     return view('debug-test', compact('users', 'products'));
 })->name('debug.test');
 
+// 测试路由 - 检查分类数据
+Route::get('/test-categories', function () {
+    $categories = \DB::table('categories')
+        ->where('is_active', true)
+        ->orderBy('sort_order')
+        ->orderBy('name')
+        ->get();
+    
+    dd([
+        'categories_count' => $categories->count(),
+        'categories_data' => $categories->toArray(),
+        'cache_key' => 'active_categories',
+        'cache_exists' => \Cache::has('active_categories')
+    ]);
+})->name('test.categories');
+
 // 默认路由重定向到移动端登录
 Route::get('/', function () {
     return redirect()->route('mobile.login');
