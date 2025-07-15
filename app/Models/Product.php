@@ -304,7 +304,7 @@ class Product extends Model
     }
 
     /**
-     * 获取图片完整URL，优先使用public/uploads/products/目录，仅用文件名查找
+     * 获取图片完整URL
      */
     public function getImageUrlAttribute()
     {
@@ -314,19 +314,8 @@ class Product extends Model
         if (str_starts_with($this->image, 'http')) {
             return $this->image;
         }
-        // 只取文件名
-        $filename = basename($this->image);
-        // 先查uploads/products
-        $uploadsPath = public_path('uploads/products/' . $filename);
-        if (file_exists($uploadsPath)) {
-            return '/uploads/products/' . $filename;
-        }
-        // 再查storage/products
-        $storagePath = public_path('storage/products/' . $filename);
-        if (file_exists($storagePath)) {
-            return '/storage/products/' . $filename;
-        }
-        // fallback
+        
+        // 直接使用Storage::url，因为图片保存在storage/app/public/products/
         return \Illuminate\Support\Facades\Storage::url($this->image);
     }
 
