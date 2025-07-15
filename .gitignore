@@ -1,0 +1,128 @@
+# Laravel .gitignore
+
+# Composer
+/vendor/
+composer.phar
+
+# Laravel
+/node_modules/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/app/public/
+/bootstrap/cache/
+
+# Environment files
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# Laravel backup files
+*.zip
+*.tar.gz
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache files
+*.cache
+
+# Database files
+*.sqlite
+*.db
+
+# Backup files
+*.bak
+*.backup
+
+# Compiled files
+*.compiled.php
+
+# IDE specific files
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+
+# Laravel specific
+Homestead.json
+Homestead.yaml
+auth.json
+
+# Testing
+.phpunit.cache/
+.phpunit.result.cache
+
+# Local configuration
+config/local.php
+
+# Application specific
+public/uploads/
+storage/app/public/uploads/
+storage/backups/
+storage/debugbar/
+
+# Performance files
+storage/framework/cache/data/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+
+# Keep empty directories
+!.gitkeep 

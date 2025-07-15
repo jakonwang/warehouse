@@ -1,0 +1,24 @@
+<?php
+
+return [
+    'dashboard' => '仪表盘',
+    'mobile' => '移动端',
+    'inventory_management' => '库存',
+    'sales_management' => '销售',
+    'data_statistics' => '统计',
+    'system_settings' => '设置',
+    'inventory_query' => '库存',
+    'stock_in_management' => '入库',
+    'product_management' => '商品',
+    'category_management' => '分类',
+    'sales_records' => '记录',
+    'new_sale' => '新增',
+    'return_management' => '退货',
+    'sales_report' => '报表',
+    'store_management' => '仓库',
+    'user_management' => '用户',
+    'system_config' => '配置',
+    'backup' => '备份',
+    'monitor' => '监控',
+    'health' => '健康度',
+]; 

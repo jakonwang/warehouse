@@ -1,0 +1,24 @@
+<?php
+
+return [
+    'dashboard' => 'Dashboard',
+    'mobile' => 'Mobile',
+    'inventory_management' => 'Inventory',
+    'sales_management' => 'Sales',
+    'data_statistics' => 'Statistics',
+    'system_settings' => 'Settings',
+    'inventory_query' => 'Inventory',
+    'stock_in_management' => 'Stock In',
+    'product_management' => 'Products',
+    'category_management' => 'Categories',
+    'sales_records' => 'Records',
+    'new_sale' => 'New Sale',
+    'return_management' => 'Returns',
+    'sales_report' => 'Sales Report',
+    'store_management' => 'Stores',
+    'user_management' => 'Users',
+    'system_config' => 'Config',
+    'backup' => 'Backup',
+    'monitor' => 'Monitor',
+    'health' => 'Health',
+]; 
