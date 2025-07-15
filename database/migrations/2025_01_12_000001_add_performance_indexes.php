@@ -12,89 +12,105 @@ return new class extends Migration
     public function up(): void
     {
         // 退货记录表索引
-        if (!Schema::hasIndex('return_records', 'return_records_created_at_index')) {
-            Schema::table('return_records', function (Blueprint $table) {
-                $table->index('created_at', 'return_records_created_at_index');
-            });
-        }
+        if (Schema::hasTable('return_records')) {
+            if (!Schema::hasIndex('return_records', 'return_records_created_at_index')) {
+                Schema::table('return_records', function (Blueprint $table) {
+                    $table->index('created_at', 'return_records_created_at_index');
+                });
+            }
 
-        if (!Schema::hasIndex('return_records', 'return_records_store_id_index')) {
-            Schema::table('return_records', function (Blueprint $table) {
-                $table->index('store_id', 'return_records_store_id_index');
-            });
+            if (!Schema::hasIndex('return_records', 'return_records_store_id_index')) {
+                Schema::table('return_records', function (Blueprint $table) {
+                    $table->index('store_id', 'return_records_store_id_index');
+                });
+            }
         }
 
         // 入库记录表索引
-        if (!Schema::hasIndex('stock_in_records', 'stock_in_records_created_at_index')) {
-            Schema::table('stock_in_records', function (Blueprint $table) {
-                $table->index('created_at', 'stock_in_records_created_at_index');
-            });
-        }
+        if (Schema::hasTable('stock_in_records')) {
+            if (!Schema::hasIndex('stock_in_records', 'stock_in_records_created_at_index')) {
+                Schema::table('stock_in_records', function (Blueprint $table) {
+                    $table->index('created_at', 'stock_in_records_created_at_index');
+                });
+            }
 
-        if (!Schema::hasIndex('stock_in_records', 'stock_in_records_store_id_index')) {
-            Schema::table('stock_in_records', function (Blueprint $table) {
-                $table->index('store_id', 'stock_in_records_store_id_index');
-            });
+            if (!Schema::hasIndex('stock_in_records', 'stock_in_records_store_id_index')) {
+                Schema::table('stock_in_records', function (Blueprint $table) {
+                    $table->index('store_id', 'stock_in_records_store_id_index');
+                });
+            }
         }
 
         // 出库记录表索引
-        if (!Schema::hasIndex('stock_out_records', 'stock_out_records_created_at_index')) {
-            Schema::table('stock_out_records', function (Blueprint $table) {
-                $table->index('created_at', 'stock_out_records_created_at_index');
-            });
-        }
+        if (Schema::hasTable('stock_out_records')) {
+            if (!Schema::hasIndex('stock_out_records', 'stock_out_records_created_at_index')) {
+                Schema::table('stock_out_records', function (Blueprint $table) {
+                    $table->index('created_at', 'stock_out_records_created_at_index');
+                });
+            }
 
-        if (!Schema::hasIndex('stock_out_records', 'stock_out_records_store_id_index')) {
-            Schema::table('stock_out_records', function (Blueprint $table) {
-                $table->index('store_id', 'stock_out_records_store_id_index');
-            });
+            if (!Schema::hasIndex('stock_out_records', 'stock_out_records_store_id_index')) {
+                Schema::table('stock_out_records', function (Blueprint $table) {
+                    $table->index('store_id', 'stock_out_records_store_id_index');
+                });
+            }
         }
 
         // 活动记录表索引
-        if (!Schema::hasIndex('activities', 'activities_created_at_index')) {
-            Schema::table('activities', function (Blueprint $table) {
-                $table->index('created_at', 'activities_created_at_index');
-            });
-        }
+        if (Schema::hasTable('activities')) {
+            if (!Schema::hasIndex('activities', 'activities_created_at_index')) {
+                Schema::table('activities', function (Blueprint $table) {
+                    $table->index('created_at', 'activities_created_at_index');
+                });
+            }
 
-        if (!Schema::hasIndex('activities', 'activities_user_id_index')) {
-            Schema::table('activities', function (Blueprint $table) {
-                $table->index('user_id', 'activities_user_id_index');
-            });
+            if (!Schema::hasIndex('activities', 'activities_user_id_index')) {
+                Schema::table('activities', function (Blueprint $table) {
+                    $table->index('user_id', 'activities_user_id_index');
+                });
+            }
         }
 
         // 盲袋发货明细表索引
-        if (!Schema::hasIndex('blind_bag_deliveries', 'blind_bag_deliveries_sale_id_index')) {
-            Schema::table('blind_bag_deliveries', function (Blueprint $table) {
-                $table->index('sale_id', 'blind_bag_deliveries_sale_id_index');
-            });
+        if (Schema::hasTable('blind_bag_deliveries')) {
+            if (!Schema::hasIndex('blind_bag_deliveries', 'blind_bag_deliveries_sale_id_index')) {
+                Schema::table('blind_bag_deliveries', function (Blueprint $table) {
+                    $table->index('sale_id', 'blind_bag_deliveries_sale_id_index');
+                });
+            }
         }
 
         // 销售详情表索引
-        if (!Schema::hasIndex('sale_details', 'sale_details_sale_id_index')) {
-            Schema::table('sale_details', function (Blueprint $table) {
-                $table->index('sale_id', 'sale_details_sale_id_index');
-            });
+        if (Schema::hasTable('sale_details')) {
+            if (!Schema::hasIndex('sale_details', 'sale_details_sale_id_index')) {
+                Schema::table('sale_details', function (Blueprint $table) {
+                    $table->index('sale_id', 'sale_details_sale_id_index');
+                });
+            }
         }
 
         // 库存记录表索引
-        if (!Schema::hasIndex('inventory_records', 'inventory_records_inventory_id_index')) {
-            Schema::table('inventory_records', function (Blueprint $table) {
-                $table->index('inventory_id', 'inventory_records_inventory_id_index');
-            });
+        if (Schema::hasTable('inventory_records')) {
+            if (!Schema::hasIndex('inventory_records', 'inventory_records_inventory_id_index')) {
+                Schema::table('inventory_records', function (Blueprint $table) {
+                    $table->index('inventory_id', 'inventory_records_inventory_id_index');
+                });
+            }
         }
 
         // 用户仓库关联表索引
-        if (!Schema::hasIndex('store_user', 'store_user_user_id_index')) {
-            Schema::table('store_user', function (Blueprint $table) {
-                $table->index('user_id', 'store_user_user_id_index');
-            });
-        }
+        if (Schema::hasTable('store_user')) {
+            if (!Schema::hasIndex('store_user', 'store_user_user_id_index')) {
+                Schema::table('store_user', function (Blueprint $table) {
+                    $table->index('user_id', 'store_user_user_id_index');
+                });
+            }
 
-        if (!Schema::hasIndex('store_user', 'store_user_store_id_index')) {
-            Schema::table('store_user', function (Blueprint $table) {
-                $table->index('store_id', 'store_user_store_id_index');
-            });
+            if (!Schema::hasIndex('store_user', 'store_user_store_id_index')) {
+                Schema::table('store_user', function (Blueprint $table) {
+                    $table->index('store_id', 'store_user_store_id_index');
+                });
+            }
         }
     }
 
