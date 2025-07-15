@@ -203,7 +203,6 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:products,code,' . $product->id,
             'type' => 'required|in:standard,blind_bag',
             'price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
@@ -226,7 +225,7 @@ class ProductController extends Controller
                 $validated['image'] = $imagePath;
             }
 
-            // 更新商品
+            // 更新商品（保持原有编码不变）
             $product->update($validated);
 
             // 清除相关缓存（暂时注释掉）
