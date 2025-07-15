@@ -105,7 +105,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:products',
+            'code' => 'nullable|string|max:50|unique:products',
             'type' => 'required|in:standard,blind_bag',
             'price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
@@ -116,6 +116,11 @@ class ProductController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // 自动生成商品编码（如果未提供）
+            if (empty($validated['code'])) {
+                $validated['code'] = $this->generateProductCode();
+            }
 
             // 处理图片上传
             if ($request->hasFile('image')) {
@@ -142,6 +147,18 @@ class ProductController extends Controller
             return back()->withInput()
                 ->with('error', '商品创建失败，请重试');
         }
+    }
+
+    /**
+     * 生成商品编码
+     */
+    private function generateProductCode()
+    {
+        $prefix = 'P';
+        $date = date('Ymd');
+        $random = strtoupper(substr(md5(uniqid()), 0, 4));
+        
+        return $prefix . $date . $random;
     }
 
     /**

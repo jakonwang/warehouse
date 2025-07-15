@@ -65,6 +65,23 @@
                                     @enderror
                                 </div>
 
+                                <!-- 商品编码 -->
+                                <div>
+                                    <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
+                                        商品编码
+                                    </label>
+                                    <input type="text" 
+                                           id="code" 
+                                           name="code" 
+                                           value="{{ old('code') }}" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('code') border-red-500 ring-2 ring-red-200 @enderror"
+                                           placeholder="留空将自动生成">
+                                    <p class="mt-1 text-xs text-gray-500">留空将自动生成商品编码</p>
+                                    @error('code')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
                                 <!-- 商品类型 -->
                                 <div>
                                     <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
