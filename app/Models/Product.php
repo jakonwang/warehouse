@@ -315,7 +315,17 @@ class Product extends Model
             return $this->image;
         }
         
-        // 直接使用Storage::url，因为图片保存在storage/app/public/products/
+        // 检查图片是否在uploads目录
+        if (str_contains($this->image, 'uploads/')) {
+            return asset($this->image);
+        }
+        
+        // 检查图片是否在storage目录
+        if (str_contains($this->image, 'storage/')) {
+            return asset($this->image);
+        }
+        
+        // 默认使用Storage::url
         return \Illuminate\Support\Facades\Storage::url($this->image);
     }
 

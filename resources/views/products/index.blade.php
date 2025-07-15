@@ -166,7 +166,7 @@
                         <!-- 商品图片 -->
                         <div class="aspect-w-16 aspect-h-9 bg-gray-100">
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" 
+                                <img src="{{ str_contains($product->image, 'uploads/') ? asset($product->image) : asset('storage/' . $product->image) }}" alt="{{ $product->name }}" 
                                      class="w-full h-48 object-cover" 
                                      onerror="this.parentElement.innerHTML='<div class=\'w-full h-48 bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center\'><i class=\'bi bi-image text-white text-4xl opacity-50\'></i></div>'">
                             @else
@@ -294,7 +294,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             @if($product->image)
-                                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" 
+                                                <img src="{{ str_contains($product->image, 'uploads/') ? asset($product->image) : asset('storage/' . $product->image) }}" alt="{{ $product->name }}" 
                                                      class="w-12 h-12 rounded-lg object-cover"
                                                      onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbGw9IiNkMWQ1ZGIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgM0g1Yy0xLjEgMC0yIC45LTIgMnYxNGMwIDEuMS45IDIgMiAyaDE0YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMTZINVY1aDE0djE0em0tNS04LjVjMC0uODMtLjY3LTEuNS0xLjUtMS41UzExIDcuNjcgMTEgOC41czY3IDEuNSAxLjUgMS41IDEuNS0uNjcgMS41LTEuNXpNOSAxMWw0LjUgNiA0LjUtNi05eiIvPjwvc3ZnPg=='">
                                             @else
@@ -659,7 +659,7 @@ function productManager() {
             this.editingItem = { 
                 ...product,
                 is_active: Boolean(product.is_active),
-                image: product.image ? '{{ asset('storage') }}/' + product.image : null
+                image: product.image ? (product.image.includes('uploads/') ? '{{ asset('') }}' + product.image : '{{ asset('storage') }}/' + product.image) : null
             };
         },
         
