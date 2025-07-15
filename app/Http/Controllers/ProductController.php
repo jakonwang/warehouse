@@ -73,14 +73,12 @@ class ProductController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
         
-        // 使用缓存优化分类查询
-        $categories = Cache::remember('active_categories', 1800, function () {
-            return DB::table('categories')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get();
-        });
+        // 直接查询分类，不使用缓存
+        $categories = DB::table('categories')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
 
         return view('products.index', compact('products', 'categories'));
     }
@@ -90,14 +88,12 @@ class ProductController extends Controller
      */
     public function create()
     {
-        // 使用缓存优化分类查询
-        $categories = Cache::remember('active_categories', 1800, function () {
-            return DB::table('categories')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get();
-        });
+        // 直接查询分类，不使用缓存
+        $categories = DB::table('categories')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
         
         return view('products.create', compact('categories'));
     }
@@ -130,9 +126,9 @@ class ProductController extends Controller
             // 创建商品
             $product = Product::create($validated);
 
-            // 清除相关缓存
-            Cache::forget('active_categories');
-            Cache::forget('dashboard_data_' . auth()->id());
+            // 清除相关缓存（暂时注释掉）
+            // Cache::forget('active_categories');
+            // Cache::forget('dashboard_data_' . auth()->id());
 
             DB::commit();
 
@@ -173,14 +169,12 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        // 使用缓存优化分类查询
-        $categories = Cache::remember('active_categories', 1800, function () {
-            return DB::table('categories')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get();
-        });
+        // 直接查询分类，不使用缓存
+        $categories = DB::table('categories')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
 
         return view('products.edit', compact('product', 'categories'));
     }
@@ -218,10 +212,10 @@ class ProductController extends Controller
             // 更新商品
             $product->update($validated);
 
-            // 清除相关缓存
-            Cache::forget('active_categories');
-            Cache::forget('dashboard_data_' . auth()->id());
-            Cache::forget('product_inventory_' . $product->id);
+            // 清除相关缓存（暂时注释掉）
+            // Cache::forget('active_categories');
+            // Cache::forget('dashboard_data_' . auth()->id());
+            // Cache::forget('product_inventory_' . $product->id);
 
             DB::commit();
 
@@ -261,9 +255,9 @@ class ProductController extends Controller
             // 删除商品
             $product->delete();
 
-            // 清除相关缓存
-            Cache::forget('active_categories');
-            Cache::forget('dashboard_data_' . auth()->id());
+            // 清除相关缓存（暂时注释掉）
+            // Cache::forget('active_categories');
+            // Cache::forget('dashboard_data_' . auth()->id());
 
             DB::commit();
 
