@@ -44,7 +44,12 @@ class AppServiceProvider extends ServiceProvider
             } else {
                 $stores = collect();
             }
-            $view->with('userStores', $stores);
+            
+            // 只在非用户编辑页面注入全局 userStores
+            if (!str_contains($view->getName(), 'users.edit')) {
+                $view->with('userStores', $stores);
+            }
+            
             // 注入当前仓库对象
             $currentStoreId = session('current_store_id');
             $currentStore = ($currentStoreId && $currentStoreId != 0) ? \App\Models\Store::find($currentStoreId) : null;

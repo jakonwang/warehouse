@@ -5,6 +5,37 @@
 ### 系统定位
 越南盲袋库存管理系统是一个专为盲袋商品设计的现代化库存管理平台，采用Laravel框架开发，前端使用TailwindCSS构建高级现代化界面。系统支持PC端和移动端双平台操作，提供完整的盲袋商品生命周期管理。
 
+### 部署注意事项
+**重要**：在Linux服务器部署时，需要特别注意文件存储配置：
+
+1. **Storage软链接设置**：
+   ```bash
+   # 删除现有storage目录（如果是目录而不是软链接）
+   rm -rf public/storage
+   
+   # 重新创建软链接
+   php artisan storage:link
+   
+   # 验证软链接是否正确
+   ls -la public/storage
+   # 应该显示: storage -> ../storage/app/public
+   ```
+
+2. **文件权限设置**：
+   ```bash
+   # 设置正确的文件权限
+   chmod -R 755 storage
+   chmod -R 755 public
+   chown -R www-data:www-data storage
+   chown -R www-data:www-data public
+   ```
+
+3. **图片上传路径问题**：
+   - 图片实际保存在：`storage/app/public/products/`
+   - 数据库中存储路径：`products/filename.jpg`
+   - 访问URL：`/storage/products/filename.jpg`
+   - 如果图片无法显示，检查软链接是否正确设置
+
 ### 设计理念
 - **现代化界面**：采用TailwindCSS构建渐变色卡片、玻璃拟态效果、流畅动画
 - **响应式设计**：完美适配PC、平板、手机多端设备

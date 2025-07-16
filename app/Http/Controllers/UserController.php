@@ -43,9 +43,15 @@ class UserController extends Controller
             ->paginate(10);
 
         $stores = \App\Models\Store::where('is_active', true)->get();
+        $roles = \App\Models\Role::all();
         
-        return view('users.index', compact('users', 'stores'))
-            ->with($stats);
+        return view('users.index', compact('users', 'stores', 'roles'))
+            ->with([
+                'totalUsers' => $stats['totalUsers'],
+                'activeUsers' => $stats['activeUsers'],
+                'adminUsers' => $stats['adminUsers'],
+                'newUsersThisMonth' => $stats['newUsersThisMonth']
+            ]);
     }
 
     public function create()
@@ -77,6 +83,9 @@ class UserController extends Controller
             $user->stores()->attach($request->store_ids);
         }
         
+        // 清除用户统计缓存
+        $this->clearUserStatsCache();
+        
         return redirect()->route('users.index')->with('success', '用户创建成功');
     }
 
@@ -87,10 +96,30 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $roles = \App\Models\Role::all();
-        $stores = \App\Models\Store::where('is_active', true)->get();
-        $userStores = $user->stores->pluck('id')->toArray();
-        return view('users.edit', compact('user', 'roles', 'stores', 'userStores'));
+        try {
+            // 检查当前用户权限
+            $currentUser = auth()->user();
+            \Log::info('User edit access', [
+                'current_user_id' => $currentUser->id,
+                'current_user_role' => $currentUser->role->code ?? 'no_role',
+                'can_manage_users' => $currentUser->canManageUsers(),
+                'target_user_id' => $user->id
+            ]);
+            
+            $roles = \App\Models\Role::all();
+            $stores = \App\Models\Store::where('is_active', true)->get();
+            $userStores = $user->stores->pluck('id')->toArray();
+            return view('users.edit', compact('user', 'roles', 'stores', 'userStores'))
+                ->with('userStores', $userStores); // 明确覆盖全局变量
+        } catch (\Exception $e) {
+            \Log::error('User edit error', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->with('error', '加载用户编辑页面失败：' . $e->getMessage());
+        }
     }
 
     public function update(Request $request, User $user)
@@ -115,6 +144,9 @@ class UserController extends Controller
         // 更新仓库分配
         $user->stores()->sync($request->store_ids ?? []);
         
+        // 清除用户统计缓存
+        $this->clearUserStatsCache();
+        
         return redirect()->route('users.index')->with('success', '用户更新成功');
     }
 
@@ -126,7 +158,19 @@ class UserController extends Controller
 
         $user->delete();
 
+        // 清除用户统计缓存
+        $this->clearUserStatsCache();
+
         return redirect()->route('users.index')
             ->with('success', '用户删除成功！');
+    }
+
+    /**
+     * 清除用户统计缓存
+     */
+    private function clearUserStatsCache()
+    {
+        $cacheKey = 'users_stats_' . auth()->id();
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
     }
 } 

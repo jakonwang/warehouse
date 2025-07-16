@@ -18,7 +18,8 @@
         real_name: '',
         email: '',
         password: '',
-        role: 'viewer',
+        role_id: '',
+        is_active: 1,
         store_ids: []
     },
     resetForm() {
@@ -27,7 +28,8 @@
             real_name: '',
             email: '',
             password: '',
-            role: 'viewer',
+            role_id: '',
+            is_active: 1,
             store_ids: []
         };
         this.editingUser = null;
@@ -312,7 +314,7 @@
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showAddModal = false; resetForm()"></div>
             
             <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="#" method="POST">
+                <form action="{{ route('users.store') }}" method="POST" id="addUserForm">
                     @csrf
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start">
@@ -321,6 +323,27 @@
                             </div>
                             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                                 <h3 class="text-lg leading-6 font-medium text-gray-900"><x-lang key="messages.users.add_user"/></h3>
+                                
+                                <!-- 错误消息显示 -->
+                                @if ($errors->any())
+                                    <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi bi-exclamation-triangle text-red-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h3 class="text-sm font-medium text-red-800">请修正以下错误：</h3>
+                                                <div class="mt-2 text-sm text-red-700">
+                                                    <ul class="list-disc pl-5 space-y-1">
+                                                        @foreach ($errors->all() as $error)
+                                                            <li>{{ $error }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                                 <div class="mt-4 space-y-4">
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
@@ -334,7 +357,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.users.email_address"/></label>
-                                        <input type="email" name="email" x-model="newUser.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="<x-lang key="messages.users.email_placeholder"/>">
+                                        <input type="email" name="email" x-model="newUser.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="<x-lang key="messages.users.email_placeholder"/>" required>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.users.login_password"/></label>
@@ -342,12 +365,25 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.users.user_role"/></label>
-                                        <select name="role" x-model="newUser.role" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="viewer"><x-lang key="messages.users.role_viewer"/></option>
-                                            <option value="sales"><x-lang key="messages.users.role_sales_clerk"/></option>
-                                            <option value="manager"><x-lang key="messages.users.role_inventory_manager"/></option>
-                                            <option value="admin"><x-lang key="messages.users.role_super_admin"/></option>
+                                        <select name="role_id" x-model="newUser.role_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                            <option value="">请选择角色</option>
+                                            @foreach($roles as $role)
+                                                <option value="{{ $role->id }}">{{ $role->display_name }}</option>
+                                            @endforeach
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">用户状态</label>
+                                        <div class="flex items-center space-x-4">
+                                            <label class="flex items-center">
+                                                <input type="radio" name="is_active" value="1" checked class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2">
+                                                <span class="ml-2 text-sm text-gray-700">启用</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="radio" name="is_active" value="0" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2">
+                                                <span class="ml-2 text-sm text-gray-700">禁用</span>
+                                            </label>
+                                        </div>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.users.assign_stores"/></label>
@@ -458,4 +494,6 @@
         </div>
     </div>
 </div>
+
+
 @endsection 
