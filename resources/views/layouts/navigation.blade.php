@@ -133,17 +133,17 @@
     </a>
 
     {{-- 系统设置 --}}
-    <div x-data="{ settingsOpen: {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*') ? 'true' : 'false' }} }" class="space-y-1">
-        <button @click="settingsOpen = !settingsOpen" class="group w-full flex items-center justify-between p-2.5 rounded-lg transition-all duration-300 {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*') ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white !text-white shadow-lg transform scale-105' : 'text-gray-800 hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-50 hover:text-slate-700 hover:shadow-md' }}">
+    <div x-data="{ settingsOpen: {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*', 'activity-logs.*') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="settingsOpen = !settingsOpen" class="group w-full flex items-center justify-between p-2.5 rounded-lg transition-all duration-300 {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*', 'activity-logs.*') ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white !text-white shadow-lg transform scale-105' : 'text-gray-800 hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-50 hover:text-slate-700 hover:shadow-md' }}">
             <div class="flex items-center">
-                <div class="w-9 h-9 flex items-center justify-center rounded-lg {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*') ? 'bg-white/20 backdrop-blur-sm shadow-inner' : 'bg-gradient-to-br from-slate-100 to-gray-100 group-hover:from-slate-200 group-hover:to-gray-200' }} transition-all duration-300">
-                    <i class="bi bi-gear-fill {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*') ? 'text-white' : 'text-slate-600 group-hover:text-slate-700' }} text-base"></i>
+                <div class="w-9 h-9 flex items-center justify-center rounded-lg {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*', 'activity-logs.*') ? 'bg-white/20 backdrop-blur-sm shadow-inner' : 'bg-gradient-to-br from-slate-100 to-gray-100 group-hover:from-slate-200 group-hover:to-gray-200' }} transition-all duration-300">
+                    <i class="bi bi-gear-fill {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*', 'activity-logs.*') ? 'text-white' : 'text-slate-600 group-hover:text-slate-700' }} text-base"></i>
                 </div>
                 <span class="ml-3 font-semibold text-sm">{{ __('navigation.system_settings') }}</span>
             </div>
             <i class="bi bi-chevron-down transform transition-all duration-300 text-sm" :class="{ 'rotate-180': settingsOpen }"></i>
         </button>
-        <div x-show="settingsOpen" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" class="ml-5 mt-1.5 space-y-1 border-l-2 border-slate-100 pl-3.5" style="display: none;">
+        <div x-show="settingsOpen" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" class="ml-5 mt-1.5 space-y-1 border-l-2 border-slate-100 pl-3.5" style="display: {{ request()->routeIs('system-config.*', 'backup.*', 'system-monitor.*', 'activity-logs.*') ? 'block' : 'none' }};">
             <a href="{{ route('system-config.index') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 transition-all duration-200 group {{ request()->routeIs('system-config.*') ? 'bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 shadow-md' : 'text-gray-600 hover:text-violet-700' }}">
                 <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('system-config.*') ? '!bg-violet-500 shadow-md' : 'bg-gray-100 group-hover:bg-violet-100' }} transition-all duration-200">
                     <i class="bi bi-sliders {{ request()->routeIs('system-config.*') ? '!text-white' : 'text-gray-500 group-hover:text-violet-600' }} text-sm"></i>
@@ -162,16 +162,15 @@
                 </div>
                 <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.monitor') }}</span>
             </a>
+            {{-- 活动日志 --}}
+            @can('isSuperAdmin', auth()->user())
+            <a href="{{ route('activity-logs.index') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200 group {{ request()->routeIs('activity-logs.*') ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 shadow-md' : 'text-gray-600 hover:text-purple-700' }}">
+                <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('activity-logs.*') ? '!bg-purple-500 shadow-md' : 'bg-gray-100 group-hover:bg-purple-100' }} transition-all duration-200">
+                    <i class="bi bi-journal-text {{ request()->routeIs('activity-logs.*') ? '!text-white' : 'text-gray-500 group-hover:text-purple-600' }} text-sm"></i>
+                </div>
+                <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.activity_logs') }}</span>
+            </a>
+            @endcan
         </div>
     </div>
-
-    {{-- 仅超级管理员可见 --}}
-    @can('isSuperAdmin', auth()->user())
-    <a href="{{ route('activity-logs.index') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200 group {{ request()->routeIs('activity-logs.*') ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 shadow-md' : 'text-gray-600 hover:text-purple-700' }}">
-        <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('activity-logs.*') ? '!bg-purple-500 shadow-md' : 'bg-gray-100 group-hover:bg-purple-100' }} transition-all duration-200">
-            <i class="bi bi-activity {{ request()->routeIs('activity-logs.*') ? '!text-white' : 'text-purple-500 group-hover:text-purple-600' }} text-sm"></i>
-        </div>
-        <span class="ml-2.5 font-semibold text-sm">操作日志</span>
-    </a>
-    @endcan
 </div> 

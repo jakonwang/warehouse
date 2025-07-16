@@ -26,6 +26,14 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            
+            // 更新用户最后登录信息
+            $user = Auth::user();
+            $user->update([
+                'last_login_at' => now(),
+                'last_login_ip' => $request->ip(),
+            ]);
+            
             // 移动端登录成功后直接跳转到移动端首页
             return redirect()->intended('mobile');
         }
@@ -44,6 +52,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            
+            // 更新用户最后登录信息
+            $user = Auth::user();
+            $user->update([
+                'last_login_at' => now(),
+                'last_login_ip' => $request->ip(),
+            ]);
             
             // 后台管理登录成功后跳转到后台管理首页
             return redirect()->intended('dashboard');

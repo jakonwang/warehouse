@@ -47,13 +47,8 @@ class ActivityLog extends Model
      */
     public function getActionNameAttribute(): string
     {
-        return match($this->action) {
-            'create' => '创建',
-            'update' => '更新',
-            'delete' => '删除',
-            'view' => '查看',
-            default => '其他'
-        };
+        $actions = __('activity-logs.actions');
+        return $actions[$this->action] ?? $actions['other'];
     }
 
     /**
@@ -61,14 +56,8 @@ class ActivityLog extends Model
      */
     public function getModelTypeNameAttribute(): string
     {
-        return match($this->model_type) {
-            'SaleController' => '销售记录',
-            'InventoryController' => '库存管理',
-            'ProductController' => '商品管理',
-            'UserController' => '用户管理',
-            'StoreController' => '仓库管理',
-            default => $this->model_type
-        };
+        $models = __('activity-logs.models');
+        return $models[$this->model_type] ?? $this->model_type;
     }
 
     /**
@@ -76,16 +65,8 @@ class ActivityLog extends Model
      */
     public function getStatusCodeTextAttribute(): string
     {
-        return match($this->status_code) {
-            200 => '成功',
-            201 => '创建成功',
-            400 => '请求错误',
-            401 => '未授权',
-            403 => '禁止访问',
-            404 => '未找到',
-            500 => '服务器错误',
-            default => '未知状态'
-        };
+        $statusCodes = __('activity-logs.status_codes');
+        return $statusCodes[$this->status_code] ?? $statusCodes['unknown'];
     }
 
     /**

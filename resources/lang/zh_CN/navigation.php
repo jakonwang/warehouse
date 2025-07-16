@@ -21,4 +21,6 @@ return [
     'backup' => '备份',
     'monitor' => '监控',
     'health' => '健康度',
+    'logs' => '日志',
+    'activity_logs' => '活动日志',
 ]; 

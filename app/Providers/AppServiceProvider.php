@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Gate;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
         // 注册全局翻译助手函数
         Blade::directive('lang', function ($expression) {
             return "<?php echo __('messages.' . $expression); ?>";
+        });
+
+        // 注册权限门面
+        Gate::define('isSuperAdmin', function ($user) {
+            return $user->isSuperAdmin();
         });
 
         // 全局注入当前用户可用仓库
