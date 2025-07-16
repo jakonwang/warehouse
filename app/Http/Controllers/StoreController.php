@@ -11,12 +11,13 @@ class StoreController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        // 只对需要管理权限的方法加 canManageStores
         $this->middleware(function ($request, $next) {
             if (!auth()->user()->canManageStores()) {
                 abort(403, '您没有权限管理仓库');
             }
             return $next($request);
-        });
+        })->only(['index', 'show', 'create', 'store', 'edit', 'update', 'destroy', 'users', 'addUser', 'removeUser']);
     }
     /**
      * 显示仓库列表

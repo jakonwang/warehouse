@@ -20,7 +20,7 @@ class SaleController extends Controller
     {
         // 优先用 request('store_id')，否则用 session('current_store_id')
         $storeId = request('store_id', session('current_store_id'));
-        $userStoreIds = auth()->user()->stores()->pluck('stores.id')->toArray();
+        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
 
         $query = \App\Models\Sale::with([
             'user:id,real_name',
@@ -41,7 +41,8 @@ class SaleController extends Controller
      */
     public function create()
     {
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        // 使用 getAccessibleStores() 方法获取用户可访问的仓库
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
         if ($stores->isEmpty()) {
             return back()->with('error', '您没有可操作的仓库权限');
         }
