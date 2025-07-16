@@ -14,6 +14,8 @@ composer.phar
 /storage/framework/sessions/
 /storage/framework/views/
 /storage/app/public/
+/storage/app/public/products/
+/storage/app/public/uploads/
 /bootstrap/cache/
 
 # Environment files
@@ -114,7 +116,9 @@ config/local.php
 
 # Application specific
 public/uploads/
+public/storage/
 storage/app/public/uploads/
+storage/app/public/products/
 storage/backups/
 storage/debugbar/
 
