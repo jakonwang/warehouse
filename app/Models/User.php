@@ -147,11 +147,11 @@ class User extends Authenticatable
             'return_manage' => ['super_admin', 'admin', 'inventory_manager'],
             'inventory_check' => ['super_admin', 'admin', 'inventory_manager'],
             
-            // 销售管理权限
-            'sale_manage' => ['super_admin', 'admin', 'sales'],
-            'sale_create' => ['super_admin', 'admin', 'sales'],
-            'sale_view' => ['super_admin', 'admin', 'sales'],
-            'sale_edit' => ['super_admin', 'admin', 'sales'],
+            // 销售管理权限 - 库存管理员现在也拥有销售权限
+            'sale_manage' => ['super_admin', 'admin', 'inventory_manager', 'sales'],
+            'sale_create' => ['super_admin', 'admin', 'inventory_manager', 'sales'],
+            'sale_view' => ['super_admin', 'admin', 'inventory_manager', 'sales'],
+            'sale_edit' => ['super_admin', 'admin', 'inventory_manager', 'sales'],
             'sale_delete' => ['super_admin', 'admin'],
             
             // 仓库管理权限
@@ -163,9 +163,9 @@ class User extends Authenticatable
             'price_config' => ['super_admin', 'admin'],
             'data_backup' => ['super_admin'],
             
-            // 报表权限
+            // 报表权限 - 库存管理员现在也拥有销售报表权限
             'report_view' => ['super_admin', 'admin', 'inventory_manager', 'sales'],
-            'report_sales' => ['super_admin', 'admin', 'sales'],
+            'report_sales' => ['super_admin', 'admin', 'inventory_manager', 'sales'],
             'report_inventory' => ['super_admin', 'admin', 'inventory_manager'],
             
             // 移动端权限
