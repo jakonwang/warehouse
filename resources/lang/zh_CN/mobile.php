@@ -43,6 +43,32 @@ return [
         'today_profit' => '今日利润',
         'delivery_content' => '发货内容',
         'blind_bag_standard' => '盲袋/标准',
+        // 详情页面
+        'details' => '销售详情',
+        'order' => '订单',
+        'basic_info' => '基本信息',
+        'sale_time' => '销售时间',
+        'sale_type' => '销售类型',
+        'blind_bag_sale' => '盲袋销售',
+        'standard_sale' => '标品销售',
+        'customer_name' => '客户姓名',
+        'customer_phone' => '客户电话',
+        'operator' => '操作员',
+        'sale_proof' => '销售凭证',
+        'sale_details' => '销售明细',
+        'unit_price' => '单价',
+        'subtotal' => '小计',
+        'cost' => '成本',
+        'profit' => '利润',
+        'delivery_details' => '发货明细',
+        'delivery_description' => '主播实际发货的商品和数量',
+        'cost_subtotal' => '成本小计',
+        'financial_summary' => '财务汇总',
+        'total_amount' => '销售总额',
+        'total_cost' => '总成本',
+        'net_profit' => '净利润',
+        'confirm_delete' => '确定要删除这条销售记录吗？',
+        'delete_record' => '删除记录',
         // 创建页面
         'create_title' => '新建销售记录',
         'create_subtitle' => '记录销售数据，自动计算利润',
@@ -232,6 +258,11 @@ return [
         'step2_title' => '第2步：选择发货内容',
         'step3_title' => '第3步：实时计算成本和利润',
         'delivery_summary' => '发货内容汇总',
+    ],
+    
+    // common
+    'common' => [
+        'back_to_list' => '返回列表',
     ],
     
     // navigation

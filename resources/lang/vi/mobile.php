@@ -43,6 +43,32 @@ return [
         'today_profit' => 'Lợi nhuận hôm nay',
         'delivery_content' => 'Nội dung giao hàng',
         'blind_bag_standard' => 'Túi bí mật/Tiêu chuẩn',
+        // Trang chi tiết
+        'details' => 'Chi tiết bán hàng',
+        'order' => 'Đơn hàng',
+        'basic_info' => 'Thông tin cơ bản',
+        'sale_time' => 'Thời gian bán hàng',
+        'sale_type' => 'Loại bán hàng',
+        'blind_bag_sale' => 'Bán túi bí mật',
+        'standard_sale' => 'Bán tiêu chuẩn',
+        'customer_name' => 'Tên khách hàng',
+        'customer_phone' => 'Số điện thoại khách hàng',
+        'operator' => 'Người thao tác',
+        'sale_proof' => 'Chứng chỉ bán hàng',
+        'sale_details' => 'Chi tiết bán hàng',
+        'unit_price' => 'Đơn giá',
+        'subtotal' => 'Tổng phụ',
+        'cost' => 'Chi phí',
+        'profit' => 'Lợi nhuận',
+        'delivery_details' => 'Chi tiết giao hàng',
+        'delivery_description' => 'Sản phẩm và số lượng giao hàng thực tế của người dẫn chương trình',
+        'cost_subtotal' => 'Tổng phụ chi phí',
+        'financial_summary' => 'Tóm tắt tài chính',
+        'total_amount' => 'Tổng số tiền bán hàng',
+        'total_cost' => 'Tổng chi phí',
+        'net_profit' => 'Lợi nhuận ròng',
+        'confirm_delete' => 'Bạn có chắc chắn muốn xóa bản ghi bán hàng này không?',
+        'delete_record' => 'Xóa bản ghi',
         // Trang tạo
         'create_title' => 'Tạo bản ghi bán hàng',
         'create_subtitle' => 'Ghi lại dữ liệu bán hàng, tự động tính lợi nhuận',
@@ -232,6 +258,11 @@ return [
         'step2_title' => 'Bước 2: Chọn nội dung giao hàng',
         'step3_title' => 'Bước 3: Tính toán chi phí và lợi nhuận thời gian thực',
         'delivery_summary' => 'Tóm tắt nội dung giao hàng',
+    ],
+    
+    // common
+    'common' => [
+        'back_to_list' => 'Quay lại danh sách',
     ],
     
     // navigation

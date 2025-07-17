@@ -43,6 +43,32 @@ return [
         'today_profit' => 'Today Profit',
         'delivery_content' => 'Delivery Content',
         'blind_bag_standard' => 'Blind Bag/Standard',
+        // Details page
+        'details' => 'Sales Details',
+        'order' => 'Order',
+        'basic_info' => 'Basic Info',
+        'sale_time' => 'Sale Time',
+        'sale_type' => 'Sale Type',
+        'blind_bag_sale' => 'Blind Bag Sale',
+        'standard_sale' => 'Standard Sale',
+        'customer_name' => 'Customer Name',
+        'customer_phone' => 'Customer Phone',
+        'operator' => 'Operator',
+        'sale_proof' => 'Sale Proof',
+        'sale_details' => 'Sale Details',
+        'unit_price' => 'Unit Price',
+        'subtotal' => 'Subtotal',
+        'cost' => 'Cost',
+        'profit' => 'Profit',
+        'delivery_details' => 'Delivery Details',
+        'delivery_description' => 'Actual delivery products and quantities by anchor',
+        'cost_subtotal' => 'Cost Subtotal',
+        'financial_summary' => 'Financial Summary',
+        'total_amount' => 'Total Amount',
+        'total_cost' => 'Total Cost',
+        'net_profit' => 'Net Profit',
+        'confirm_delete' => 'Are you sure you want to delete this sales record?',
+        'delete_record' => 'Delete Record',
         // 创建页面
         'create_title' => 'New Sales Record',
         'create_subtitle' => 'Record sales data, automatically calculate profit',
@@ -232,6 +258,11 @@ return [
         'step2_title' => 'Step 2: Select Delivery Content',
         'step3_title' => 'Step 3: Real-time cost and profit calculation',
         'delivery_summary' => 'Delivery Content Summary',
+    ],
+    
+    // common
+    'common' => [
+        'back_to_list' => 'Back to List',
     ],
     
     // navigation
