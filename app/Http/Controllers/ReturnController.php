@@ -17,33 +17,16 @@ class ReturnController extends Controller
      */
     public function index()
     {
-        $storeId = request('store_id') ?? session('current_store_id');
-        $userStoreIds = auth()->user()->stores()->pluck('stores.id')->toArray();
-        
-        // 使用 Eloquent 模型查询，但优化关系加载
+        $storeId = request('store_id', session('current_store_id'));
+        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
         $query = ReturnRecord::with(['user', 'store', 'returnDetails.product'])
             ->whereIn('store_id', $userStoreIds);
-
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
-
-        $records = $query->orderBy('created_at', 'desc')->paginate(10);
-
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
-
-        // 单独计算统计数据
-        $statsQuery = ReturnRecord::whereIn('store_id', $userStoreIds);
-        
-        if ($storeId) {
-            $statsQuery->where('store_id', $storeId);
-        }
-        
-        $totalAmount = $statsQuery->sum('total_amount');
-        $todayCount = $statsQuery->whereDate('created_at', today())->count();
-        $pendingCount = 0;
-
-        return view('returns.index', compact('records', 'stores', 'totalAmount', 'todayCount', 'pendingCount'));
+        $returns = $query->orderBy('created_at', 'desc')->paginate(10);
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
+        return view('returns.index', compact('returns', 'stores'));
     }
 
     /**
@@ -51,17 +34,9 @@ class ReturnController extends Controller
      */
     public function create()
     {
-        $storeId = request('store_id') ?? session('current_store_id');
-        
-        // 获取当前仓库的商品
-        $products = Product::where('is_active', true)
-            ->where('type', Product::TYPE_STANDARD)
-            ->orderBy('sort_order')
-            ->get();
-            
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
-        
-        return view('returns.create', compact('products', 'stores', 'storeId'));
+        $products = Product::active()->where('type', 'standard')->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
+        return view('returns.create', compact('products', 'stores'));
     }
 
     /**
@@ -165,7 +140,7 @@ class ReturnController extends Controller
             ->where('type', Product::TYPE_STANDARD)
             ->orderBy('sort_order')
             ->get();
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
         return view('returns.edit', compact('returnRecord', 'products', 'stores'));
     }
 
@@ -238,7 +213,7 @@ class ReturnController extends Controller
      */
     public function mobileCreate()
     {
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
         $products = Product::where('type', 'standard')
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -254,10 +229,10 @@ class ReturnController extends Controller
     {
         $storeId = request('store_id') ?? session('current_store_id');
         $user = auth()->user();
-        $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+        $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
         
         // 获取用户可访问的仓库
-        $stores = $user->stores()->where('is_active', true)->get();
+        $stores = $user->getAccessibleStores()->where('is_active', true)->values();
         
         // 获取标准商品（非盲袋）
         $products = Product::where('type', 'standard')
@@ -392,7 +367,7 @@ class ReturnController extends Controller
             ->where('type', Product::TYPE_STANDARD)
             ->orderBy('sort_order')
             ->get();
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
         return view('mobile.returns.edit', compact('returnRecord', 'products', 'stores'));
     }
 

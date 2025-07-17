@@ -152,9 +152,11 @@
             </div>
 
             <!-- 添加商品按钮 -->
-            <button @click="showAddModal = true" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                <i class="bi bi-plus-circle mr-2"></i><x-lang key="messages.products.add_product"/>
-            </button>
+            @if(auth()->user()->canManageProducts())
+                <button @click="showAddModal = true" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    <i class="bi bi-plus-circle mr-2"></i><x-lang key="messages.products.add_product"/>
+                </button>
+            @endif
         </div>
 
         <!-- 商品列表 -->
@@ -182,16 +184,18 @@
                             @endif
                             
                             <!-- 悬停操作按钮 -->
-                            <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                <button @click="editProduct({{ json_encode($product) }})" 
-                                        class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
-                                    <i class="bi bi-pencil text-blue-600"></i>
-                                </button>
-                                <button onclick="deleteProduct({{ $product->id }})" 
-                                        class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
-                                    <i class="bi bi-trash text-red-600"></i>
-                                </button>
-                            </div>
+                            @if(auth()->user()->canManageProducts())
+                                <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <button @click="editProduct({{ json_encode($product) }})" 
+                                            class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
+                                        <i class="bi bi-pencil text-blue-600"></i>
+                                    </button>
+                                    <button onclick="deleteProduct({{ $product->id }})" 
+                                            class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
+                                        <i class="bi bi-trash text-red-600"></i>
+                                    </button>
+                                </div>
+                            @endif
 
                             <!-- 状态和类型标签 -->
                             <div class="absolute top-3 left-3 flex flex-col space-y-2">
@@ -231,6 +235,7 @@
                                     <span class="text-sm font-medium text-gray-700">¥{{ number_format($product->cost_price, 2) }}</span>
                                 </div>
                                 @if($product->type === 'standard')
+                                    @if(auth()->user()->canViewProfitAndCost())
                                     @php
                                         $profitRate = $product->price > 0 ? (($product->price - $product->cost_price) / $product->price) * 100 : 0;
                                     @endphp
@@ -240,6 +245,7 @@
                                             {{ number_format($profitRate, 1) }}%
                                         </span>
                                     </div>
+                                    @endif
                                 @endif
                             </div>
 
@@ -257,16 +263,18 @@
                             @endif
                             
                             <!-- 底部操作按钮 -->
-                            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                                <button @click="editProduct({{ json_encode($product) }})" 
-                                        class="px-3 py-1 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors">
-                                    <i class="bi bi-pencil mr-1"></i>编辑
-                                </button>
-                                <button onclick="deleteProduct({{ $product->id }})" 
-                                        class="px-3 py-1 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors">
-                                    <i class="bi bi-trash mr-1"></i>删除
-                                </button>
-                            </div>
+                            @if(auth()->user()->canManageProducts())
+                                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
+                                    <button @click="editProduct({{ json_encode($product) }})" 
+                                            class="px-3 py-1 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors">
+                                        <i class="bi bi-pencil mr-1"></i>编辑
+                                    </button>
+                                    <button onclick="deleteProduct({{ $product->id }})" 
+                                            class="px-3 py-1 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors">
+                                        <i class="bi bi-trash mr-1"></i>删除
+                                    </button>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -342,12 +350,14 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         @if($product->type === 'standard')
+                                            @if(auth()->user()->canViewProfitAndCost())
                                             @php
                                                 $profitRate = $product->price > 0 ? (($product->price - $product->cost_price) / $product->price) * 100 : 0;
                                             @endphp
                                             <span class="font-medium {{ $profitRate >= 30 ? 'text-green-600' : 'text-orange-600' }}">
                                                 {{ number_format($profitRate, 1) }}%
                                             </span>
+                                            @endif
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif
@@ -364,16 +374,20 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div class="flex space-x-2">
-                                            <button @click="editProduct({{ json_encode($product) }})" 
-                                                    class="text-blue-600 hover:text-blue-900">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button onclick="deleteProduct({{ $product->id }})" 
-                                                    class="text-red-600 hover:text-red-900">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
+                                        @if(auth()->user()->canManageProducts())
+                                            <div class="flex space-x-2">
+                                                <button @click="editProduct({{ json_encode($product) }})" 
+                                                        class="text-blue-600 hover:text-blue-900">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button onclick="deleteProduct({{ $product->id }})" 
+                                                        class="text-red-600 hover:text-red-900">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -391,9 +405,11 @@
                 <i class="bi bi-box text-4xl text-gray-400 mb-4"></i>
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">暂无商品</h3>
                 <p class="text-gray-600 mb-4">开始添加您的第一个商品</p>
-                <button @click="showAddModal = true" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                    <i class="bi bi-plus-circle mr-2"></i>添加商品
-                </button>
+                @if(auth()->user()->canManageProducts())
+                    <button @click="showAddModal = true" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="bi bi-plus-circle mr-2"></i>添加商品
+                    </button>
+                @endif
             </div>
         @endif
 

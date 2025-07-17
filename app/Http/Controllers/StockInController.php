@@ -19,7 +19,7 @@ class StockInController extends Controller
     {
         // 优先用 request('store_id')，否则用 session('current_store_id')
         $storeId = request('store_id', session('current_store_id'));
-        $userStoreIds = auth()->user()->stores()->pluck('stores.id')->toArray();
+        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
         
         // 使用 Eloquent 模型查询，但优化关系加载
         $query = StockInRecord::with(['user', 'store', 'stockInDetails.product'])
@@ -31,7 +31,7 @@ class StockInController extends Controller
 
         $stockIns = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
 
         return view('stock-ins.index', compact('stockIns', 'stores'));
     }
@@ -43,7 +43,7 @@ class StockInController extends Controller
     {
         // 只显示标准商品，因为入库管理不需要对盲袋商品进行操作
         $products = Product::active()->where('type', 'standard')->get();
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
         return view('stock-ins.create', compact('products', 'stores'));
     }
 
@@ -203,10 +203,10 @@ class StockInController extends Controller
             ->where('type', 'standard')
             ->orderBy('sort_order')
             ->get();
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
         
         // 获取最近的入库记录
-        $userStoreIds = auth()->user()->stores()->pluck('stores.id')->toArray();
+        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
         $recentRecords = StockInRecord::with(['user', 'store', 'stockInDetails.product'])
             ->whereIn('store_id', $userStoreIds)
             ->orderBy('created_at', 'desc')

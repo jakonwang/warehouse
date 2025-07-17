@@ -37,7 +37,7 @@ class InventoryController extends Controller
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('store_id', $userStoreIds);
         }
         $inventory = $query->orderBy('product_id')->paginate(10);
@@ -54,7 +54,8 @@ class InventoryController extends Controller
             ->orderBy('name')
             ->get();
         
-        $stores = \App\Models\Store::all();
+        // 使用用户有权限的仓库
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
         
         return view('inventory.create', compact('products', 'stores'));
     }
@@ -190,7 +191,7 @@ class InventoryController extends Controller
             ->get();
         
         // 获取用户有权限的仓库的库存数据（只包含标准商品）
-        $storeIds = auth()->user()->stores()->pluck('stores.id')->toArray();
+        $storeIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
         $inventory = Inventory::with(['product:id,name,code,image', 'store:id,name'])
             ->whereIn('store_id', $storeIds)
             ->whereHas('product', function($query) {

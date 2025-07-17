@@ -42,20 +42,20 @@
                 <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.stock_in_management') }}</span>
             </a>
             @endif
-            @if(auth()->user()->canManageProducts())
+            @if(auth()->user()->canViewProducts())
             <a href="{{ route('products.index') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200 group {{ request()->routeIs('products.*') ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 shadow-md' : 'text-gray-600 hover:text-purple-700' }}">
                 <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('products.*') ? '!bg-purple-500 shadow-md' : 'bg-gray-100 group-hover:bg-purple-100' }} transition-all duration-200">
                     <i class="bi bi-gift {{ request()->routeIs('products.*') ? '!text-white' : 'text-gray-500 group-hover:text-purple-600' }} text-sm"></i>
                 </div>
                 <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.product_management') }}</span>
             </a>
+            @endif
             <a href="{{ route('categories.index') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 group {{ request()->routeIs('categories.*') ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 shadow-md' : 'text-gray-600 hover:text-indigo-700' }}">
                 <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('categories.*') ? '!bg-indigo-500 shadow-md' : 'bg-gray-100 group-hover:bg-indigo-100' }} transition-all duration-200">
                     <i class="bi bi-tags {{ request()->routeIs('categories.*') ? '!text-white' : 'text-gray-500 group-hover:text-indigo-600' }} text-sm"></i>
                 </div>
                 <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.category_management') }}</span>
             </a>
-            @endif
             @if(auth()->user()->canManageStores())
             <a href="{{ route('stores.index') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 transition-all duration-200 group {{ request()->routeIs('stores.*') ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 shadow-md' : 'text-gray-600 hover:text-emerald-700' }}">
                 <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('stores.*') ? '!bg-emerald-500 shadow-md' : 'bg-gray-100 group-hover:bg-emerald-100' }} transition-all duration-200">

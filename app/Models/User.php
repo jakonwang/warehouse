@@ -134,9 +134,10 @@ class User extends Authenticatable
             'permission_manage' => ['super_admin'],
             
             // 商品管理权限
-            'product_manage' => ['super_admin', 'admin', 'inventory_manager'],
-            'product_create' => ['super_admin', 'admin', 'inventory_manager'],
-            'product_edit' => ['super_admin', 'admin', 'inventory_manager'],
+            'product_manage' => ['super_admin', 'admin'],
+            'product_view' => ['super_admin', 'admin', 'inventory_manager'],
+            'product_create' => ['super_admin', 'admin'],
+            'product_edit' => ['super_admin', 'admin'],
             'product_delete' => ['super_admin', 'admin'],
             
             // 库存管理权限
@@ -229,6 +230,14 @@ class User extends Authenticatable
     public function canManageProducts(): bool
     {
         return $this->hasPermission('product_manage');
+    }
+
+    /**
+     * 检查用户是否可以查看商品
+     */
+    public function canViewProducts(): bool
+    {
+        return $this->hasPermission('product_view');
     }
 
     /**

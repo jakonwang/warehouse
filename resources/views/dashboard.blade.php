@@ -127,6 +127,7 @@ $customRange = request('range', '');
         </div>
 
         <!-- Today's Profit -->
+        @if(auth()->user()->canViewProfitAndCost())
         <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full"></div>
             <div class="relative">
@@ -140,8 +141,10 @@ $customRange = request('range', '');
                 <p class="text-purple-100 text-sm"><x-lang key="dashboard.total_profit"/></p>
             </div>
         </div>
+        @endif
 
         <!-- Average Profit Rate -->
+        @if(auth()->user()->canViewProfitAndCost())
         <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full"></div>
             <div class="relative">
@@ -155,6 +158,7 @@ $customRange = request('range', '');
                 <p class="text-orange-100 text-sm"><x-lang key="dashboard.avg_profit_rate"/></p>
             </div>
         </div>
+        @endif
     </div>
 
     <!-- Store Performance Rankings -->

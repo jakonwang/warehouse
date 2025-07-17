@@ -102,16 +102,188 @@
 销售管理        ✓     ✓     ✓     ✓
 系统配置        ✓     ✗     ✗     ✗
 报表统计        ✓     ✓     ✓     ✓
+利润率查看      ✓     ✗     ✗     ✗
 ```
 
 **权限变更说明**：
 - 库存管理员现在拥有销售员的所有功能权限
 - 库存管理员可以管理销售记录、创建销售、查看销售报表
 - 简化了角色管理，库存管理员可以同时处理库存和销售业务
+- **新增**：只有超级管理员可以查看利润率、成本价等敏感财务信息
 
 ### 1.2 系统配置管理
 
-#### 1.2.1 统一商品管理界面
+#### 1.2.1 移动端越南语翻译完善
+**问题描述**：
+- 移动端切换到越南语时，部分中文文本没有对应的越南语翻译
+- 盲袋销售、库存管理、退货等功能缺少完整的越南语翻译
+- 系统时间显示格式不符合越南本地习惯
+
+**解决方案**：
+- 补充完整的越南语翻译文件
+- 更新移动端视图中的中文注释为翻译键
+- 设置系统时区为越南时间
+
+**技术实现**：
+
+1. **补充越南语翻译**：
+   - 在 `resources/lang/vi/messages.php` 中添加移动端相关翻译
+   - 包括盲袋销售、库存管理、退货、系统监控等模块
+   - 添加详细的步骤说明和操作提示翻译
+
+2. **更新视图文件**：
+   - 将移动端视图中的中文注释替换为翻译键
+   - 使用 `<x-lang key="messages.mobile.xxx"/>` 组件
+   - 确保所有用户界面文本都支持多语言
+
+3. **系统时间设置**：
+   - 修改 `config/app.php` 中的时区设置
+   - 从 `UTC` 改为 `Asia/Ho_Chi_Minh`
+   - 更新日期显示格式为越南习惯的 `d/m/Y`
+
+**新增翻译内容**：
+```php
+// 移动端模块翻译
+'mobile' => [
+    'stock_in' => [
+        'title' => 'Nhập kho',
+        'subtitle' => 'Quản lý nhập kho hàng hóa',
+        // ... 完整翻译
+    ],
+    'returns' => [
+        'title' => 'Quản lý trả hàng',
+        'subtitle' => 'Hỗ trợ xử lý trả hàng và hoàn tiền',
+        // ... 完整翻译
+    ],
+    'inventory' => [
+        'title' => 'Quản lý kho',
+        'subtitle' => 'Truy vấn và quản lý kho hàng',
+        // ... 完整翻译
+    ],
+    'blind_bag' => [
+        'title' => 'Bán túi bí mật',
+        'step1_title' => 'Bước 1: Chọn sản phẩm túi bí mật',
+        'step2_title' => 'Bước 2: Chọn nội dung giao hàng',
+        'step3_title' => 'Bước 3: Tính toán chi phí và lợi nhuận thời gian thực',
+        // ... 完整翻译
+    ],
+]
+```
+
+**修改文件**：
+- `resources/lang/vi/messages.php` - 补充移动端翻译
+- `resources/views/mobile/blind-bag/create.blade.php` - 更新注释为翻译键
+- `config/app.php` - 设置时区为越南时间
+- `resources/views/mobile/dashboard.blade.php` - 更新日期格式
+- `resources/views/mobile/stock-in/index.blade.php` - 补充入库页面翻译键
+- `resources/views/mobile/returns/index.blade.php` - 修复仓库选择功能
+- `resources/lang/vi/messages.php` - 补充移动端库存页面翻译
+- `resources/views/layouts/mobile.blade.php` - 修复移动端导航菜单翻译
+
+**效果**：
+- ✅ 移动端越南语翻译完整覆盖所有功能模块
+- ✅ 系统时间显示为越南本地时间
+- ✅ 日期格式符合越南用户习惯
+- ✅ 所有用户界面文本支持多语言切换
+- ✅ 移动端入库页面翻译完整，包括基本信息、选择仓库、供应商、备注、商品入库、添加商品等功能
+- ✅ 移动端退货页面仓库选择功能修复，添加了仓库下拉选择框
+- ✅ 移动端库存页面越南语翻译补充，包括产品库存、库存统计、快捷操作等功能
+- ✅ 移动端底部导航菜单越南语翻译补充，包括首页、销售、库存、入库、退货等菜单项
+
+#### 1.2.2 销售统计优化
+**问题描述**：
+- 销售页面顶部统计数据显示不准确
+- 统计数据基于当前分页数据计算，而非当天所有销售记录
+- 导致统计数据与实际当天销售情况不符
+
+**解决方案**：
+- 在控制器中单独查询当天所有销售统计数据
+- 统计数据不受分页影响，确保准确性
+- 优化查询性能，避免重复计算
+
+**技术实现**：
+```php
+// 在SaleController的index方法中
+// 单独查询当天所有销售统计数据（不受分页影响）
+$todayStatsQuery = \App\Models\Sale::whereIn('store_id', $userStoreIds);
+if ($storeId) {
+    $todayStatsQuery->where('store_id', $storeId);
+}
+$todayStats = $todayStatsQuery->where('created_at', '>=', today())->get();
+
+// 计算当天统计数据
+$todaySales = $todayStats->sum('total_amount');
+$todayProfit = $todayStats->sum('total_profit');
+$todayOrders = $todayStats->count();
+$avgProfitRate = $todayStats->count() > 0 ? $todayStats->avg('profit_rate') : 0;
+```
+
+**修改文件**：
+- `app/Http/Controllers/SaleController.php` - 添加统计数据查询
+- `resources/views/sales/index.blade.php` - 使用控制器传递的统计数据
+
+#### 1.2.2 销售权限控制完善
+**问题描述**：
+- 销售详情页面中，非超级管理员用户仍能看到成本、利润等敏感信息
+- 销售编辑页面中缺少权限控制
+- 需要确保只有超级管理员能看到所有财务信息
+
+**解决方案**：
+- 为销售详情页面的成本列添加权限控制
+- 为销售编辑页面的成本、利润、利润率添加权限控制
+- 确保权限控制的一致性
+
+**修改内容**：
+1. **销售详情页面** (`resources/views/sales/show.blade.php`)
+   - 标品销售明细表格：成本列添加权限控制
+   - 盲袋发货明细表格：成本单价和成本小计列添加权限控制
+   - 侧边栏统计：成本、利润、利润率已有权限控制
+
+2. **销售编辑页面** (`resources/views/sales/edit.blade.php`)
+   - 价格系列表格：成本列添加权限控制
+   - 表格底部统计：总成本、总利润、利润率添加权限控制
+   - JavaScript计算：利润相关计算添加权限控制
+
+**权限控制范围**：
+- ✅ 销售列表页面：利润率列
+- ✅ 销售详情页面：成本列、利润统计
+- ✅ 销售编辑页面：成本列、利润统计
+- ✅ 商品页面：成本价、利润率
+- ✅ 价格系列页面：成本列
+- ✅ 仪表盘：今日利润、平均利润率
+- ✅ 移动端销售详情：修复变量名问题，更新视图文件使用正确的变量名
+**问题描述**：
+- 销售页面顶部统计数据显示不准确
+- 统计数据基于当前分页数据计算，而非当天所有销售记录
+- 导致统计数据与实际当天销售情况不符
+
+**解决方案**：
+- 在控制器中单独查询当天所有销售统计数据
+- 统计数据不受分页影响，确保准确性
+- 优化查询性能，避免重复计算
+
+**技术实现**：
+```php
+// 在SaleController的index方法中
+// 单独查询当天所有销售统计数据（不受分页影响）
+$todayStatsQuery = \App\Models\Sale::whereIn('store_id', $userStoreIds);
+if ($storeId) {
+    $todayStatsQuery->where('store_id', $storeId);
+}
+$todayStats = $todayStatsQuery->where('created_at', '>=', today())->get();
+
+// 计算当天统计数据
+$todaySales = $todayStats->sum('total_amount');
+$todayProfit = $todayStats->sum('total_profit');
+$todayOrders = $todayStats->count();
+$avgProfitRate = $todayStats->count() > 0 ? $todayStats->avg('profit_rate') : 0;
+```
+
+**修改文件**：
+- `app/Http/Controllers/SaleController.php` - 添加统计数据查询
+- `resources/views/sales/index.blade.php` - 使用控制器传递的统计数据
+
+#### 1.2.2 统一商品管理界面
 **设计要求**：
 - 卡片式布局，每个商品一张卡片
 - 渐变背景区分商品类型（标品/盲袋）

@@ -7,7 +7,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold gradient-text"><x-lang key="messages.mobile.welcome_back"/></h1>
-                <p class="text-gray-600 mt-1"><x-lang key="messages.mobile.today_is"/> {{ now()->format('Y年m月d日') }}</p>
+                <p class="text-gray-600 mt-1"><x-lang key="messages.mobile.today_is"/> {{ now()->format('d/m/Y') }}</p>
             </div>
             <div class="flex items-center space-x-2">
                 <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">

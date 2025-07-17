@@ -155,7 +155,9 @@
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">商品名称</th>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">数量</th>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">单价</th>
+                                    @if(auth()->user()->canViewProfitAndCost())
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">成本</th>
+                                    @endif
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">小计</th>
                                 </tr>
                             </thead>
@@ -164,9 +166,11 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $detail->product->name ?? '未知商品' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $detail->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">¥{{ number_format($detail->unit_price, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600">¥{{ number_format($detail->unit_cost, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-bold">¥{{ number_format($detail->total_amount, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">¥{{ number_format($detail->price, 2) }}</td>
+                                    @if(auth()->user()->canViewProfitAndCost())
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600">¥{{ number_format($detail->cost, 2) }}</td>
+                                    @endif
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-bold">¥{{ number_format($detail->total, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -190,7 +194,7 @@
                             @if($detail->product && $detail->product->type === 'blind_bag')
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-600">{{ $detail->product->name }}</span>
-                                <span class="text-sm font-medium text-gray-900">{{ $detail->quantity }}个 × ¥{{ number_format($detail->unit_price, 2) }} = ¥{{ number_format($detail->total_amount, 2) }}</span>
+                                <span class="text-sm font-medium text-gray-900">{{ $detail->quantity }}个 × ¥{{ number_format($detail->price, 2) }} = ¥{{ number_format($detail->total, 2) }}</span>
                             </div>
                             @endif
                         @endforeach
@@ -203,8 +207,10 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">发货商品</th>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">数量</th>
+                                    @if(auth()->user()->canViewProfitAndCost())
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">成本单价</th>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">成本小计</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="bg-white/80 divide-y divide-gray-100">
@@ -212,8 +218,10 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $delivery->deliveryProduct->name ?? '未知商品' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $delivery->quantity }}</td>
+                                    @if(auth()->user()->canViewProfitAndCost())
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600">¥{{ number_format($delivery->unit_cost, 2) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">¥{{ number_format($delivery->total_cost, 2) }}</td>
+                                    @endif
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -253,6 +261,7 @@
                             <span class="text-sm font-medium text-gray-700">销售金额</span>
                             <span class="text-lg font-bold text-green-600">¥{{ number_format($sale->total_amount, 2) }}</span>
                         </div>
+                        @if(auth()->user()->canViewProfitAndCost())
                         <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                             <span class="text-sm font-medium text-gray-700">销售成本</span>
                             <span class="text-lg font-bold text-orange-600">¥{{ number_format($sale->total_cost, 2) }}</span>
@@ -265,6 +274,7 @@
                             <span class="text-sm font-medium text-gray-700">利润率</span>
                             <span class="text-lg font-bold text-yellow-600">{{ number_format($sale->profit_rate, 1) }}%</span>
                         </div>
+                        @endif
                     </div>
                 </div>
 

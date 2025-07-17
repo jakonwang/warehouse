@@ -19,19 +19,15 @@
                     <h2 class="text-lg font-semibold text-gray-900 mb-4"><x-lang key="messages.mobile.returns.basic_info"/></h2>
                     
                     <!-- 仓库选择 -->
-                    <div class="mb-4">
+                    @php $currentStore = $stores->firstWhere('id', $storeId); @endphp
+                    <div>
                         <label class="form-label block text-sm font-medium mb-2"><x-lang key="messages.mobile.returns.current_store"/></label>
-                        <select name="store_id" class="form-select w-full px-3 py-2 rounded-lg border" required>
+                        <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border bg-gray-50 text-gray-700">
                             <option value=""><x-lang key="messages.mobile.returns.please_select"/></option>
                             @foreach($stores as $store)
-                                <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>
-                                    {{ $store->name }}
-                                </option>
+                                <option value="{{ $store->id }}" @if($storeId == $store->id) selected @endif>{{ $store->name }}</option>
                             @endforeach
                         </select>
-                        @error('store_id')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
                     </div>
 
                     <!-- 客户信息 -->

@@ -29,7 +29,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-blue-100 text-sm"><x-lang key="messages.sale.today_sales"/></p>
-                        <p class="text-2xl font-bold">¥{{ number_format($sales->where('created_at', '>=', today())->sum('total_amount'), 0) }}</p>
+                        <p class="text-2xl font-bold">¥{{ number_format($todaySales, 0) }}</p>
                     </div>
                 </div>
             </div>
@@ -40,7 +40,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-green-100 text-sm"><x-lang key="messages.sale.today_profit"/></p>
-                        <p class="text-2xl font-bold">¥{{ number_format($sales->where('created_at', '>=', today())->sum('total_profit'), 0) }}</p>
+                        <p class="text-2xl font-bold">¥{{ number_format($todayProfit, 0) }}</p>
                     </div>
                 </div>
             </div>
@@ -51,21 +51,26 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-purple-100 text-sm"><x-lang key="messages.sale.today_orders"/></p>
-                        <p class="text-2xl font-bold">{{ $sales->where('created_at', '>=', today())->count() }}</p>
+                        <p class="text-2xl font-bold">{{ $todayOrders }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg backdrop-blur-xl">
-                <div class="flex items-center">
-                    <div class="p-3 bg-white/20 rounded-lg">
-                        <i class="bi bi-percent text-2xl"></i>
+            <!-- 平均利润率 -->
+            @if(auth()->user()->canViewProfitAndCost())
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full"></div>
+                <div class="relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-white/20 rounded-lg">
+                            <i class="bi bi-percent text-2xl"></i>
+                        </div>
+                        <span class="text-green-300 text-sm font-medium"><x-lang key="messages.sale.avg_profit_rate"/></span>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-orange-100 text-sm"><x-lang key="messages.sale.avg_profit_rate"/></p>
-                        <p class="text-2xl font-bold">{{ $sales->count() > 0 ? number_format($sales->avg('profit_rate'), 1) : 0 }}%</p>
-                    </div>
+                    <h3 class="text-2xl font-bold">{{ number_format($avgProfitRate, 1) }}%</h3>
+                    <p class="text-orange-100 text-sm"><x-lang key="messages.sale.avg_profit_rate"/></p>
                 </div>
             </div>
+            @endif
         </div>
 
         <!-- 筛选栏 -->
@@ -130,8 +135,10 @@
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.salesperson_name"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.store"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.total_amount"/></th>
+                            @if(auth()->user()->canViewProfitAndCost())
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.profit"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.profit_rate"/></th>
+                            @endif
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.sales_time"/></th>
                             <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.actions"/></th>
                         </tr>
@@ -155,8 +162,10 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $sale->user_name ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $sale->store_name ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">¥{{ number_format($sale->total_amount, 2) }}</td>
+                            @if(auth()->user()->canViewProfitAndCost())
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-bold">¥{{ number_format($sale->total_profit, 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-purple-600 font-bold">{{ $sale->profit_rate }}%</td>
+                            @endif
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ date('Y-m-d H:i', strtotime($sale->created_at)) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <a href="{{ route('sales.show', $sale) }}" class="inline-flex items-center justify-center p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors duration-200" title="<x-lang key="messages.sale.view"/>">
@@ -176,7 +185,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center text-gray-400">
+                            <td colspan="{{ auth()->user()->canViewProfitAndCost() ? '9' : '7' }}" class="px-6 py-12 text-center text-gray-400">
                                 <i class="bi bi-receipt text-4xl mb-4"></i>
                                 <div class="mt-2"><x-lang key="messages.sale.no_sales_records"/></div>
                             </td>

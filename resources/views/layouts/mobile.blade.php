@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', '盲袋库存管理系统')</title>
+    <title>@yield('title', __('mobile.navigation.system_name'))</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -302,7 +302,7 @@
                             </div>
                             <div class="hidden sm:block">
                                 <p class="text-sm font-medium text-gray-900">{{ Auth::user()->real_name ?? Auth::user()->username }}</p>
-                                <p class="text-xs text-gray-500">在线</p>
+                                <p class="text-xs text-gray-500"><x-lang key="mobile.navigation.online"/></p>
                             </div>
                         </div>
                     </div>
@@ -322,35 +322,35 @@
             <div class="max-w-lg mx-auto bg-white rounded-t-2xl shadow-xl flex justify-around items-center h-full border-t border-gray-200">
                 <a href="{{ route('mobile.dashboard') }}" class="flex flex-col items-center justify-center flex-1 h-full transition-all {{ request()->routeIs('mobile.dashboard') ? 'text-indigo-600 font-bold' : 'text-gray-400' }}">
                     <i class="bi bi-house text-xl {{ request()->routeIs('mobile.dashboard') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
-                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.dashboard') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}">首页</span>
+                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.dashboard') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}"><x-lang key="mobile.navigation.home"/></span>
                     @if(request()->routeIs('mobile.dashboard'))
                         <span class="block w-1 h-1 bg-indigo-500 rounded-full mt-0.5"></span>
                     @endif
                 </a>
                 <a href="{{ route('mobile.sales.index') }}" class="flex flex-col items-center justify-center flex-1 h-full transition-all {{ request()->routeIs('mobile.sales.*') && !request()->routeIs('mobile.dashboard') ? 'text-indigo-600 font-bold' : 'text-gray-400' }}">
                     <i class="bi bi-cart3 text-xl {{ request()->routeIs('mobile.sales.*') && !request()->routeIs('mobile.dashboard') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
-                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.sales.*') && !request()->routeIs('mobile.dashboard') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}">销售</span>
+                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.sales.*') && !request()->routeIs('mobile.dashboard') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}"><x-lang key="mobile.navigation.sales"/></span>
                     @if(request()->routeIs('mobile.sales.*') && !request()->routeIs('mobile.dashboard'))
                         <span class="block w-1 h-1 bg-indigo-500 rounded-full mt-0.5"></span>
                     @endif
                 </a>
                 <a href="{{ route('mobile.inventory.index') }}" class="flex flex-col items-center justify-center flex-1 h-full transition-all {{ request()->routeIs('mobile.inventory.*') ? 'text-indigo-600 font-bold' : 'text-gray-400' }}">
                     <i class="bi bi-archive text-xl {{ request()->routeIs('mobile.inventory.*') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
-                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.inventory.*') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}">库存</span>
+                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.inventory.*') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}"><x-lang key="mobile.navigation.inventory"/></span>
                     @if(request()->routeIs('mobile.inventory.*'))
                         <span class="block w-1 h-1 bg-indigo-500 rounded-full mt-0.5"></span>
                     @endif
                 </a>
                 <a href="{{ route('mobile.stock-in.index') }}" class="flex flex-col items-center justify-center flex-1 h-full transition-all {{ request()->routeIs('mobile.stock-in.*') ? 'text-indigo-600 font-bold' : 'text-gray-400' }}">
                     <i class="bi bi-box-arrow-in-down text-xl {{ request()->routeIs('mobile.stock-in.*') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
-                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.stock-in.*') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}">入库</span>
+                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.stock-in.*') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}"><x-lang key="mobile.navigation.stock_in"/></span>
                     @if(request()->routeIs('mobile.stock-in.*'))
                         <span class="block w-1 h-1 bg-indigo-500 rounded-full mt-0.5"></span>
                     @endif
                 </a>
                 <a href="{{ route('mobile.returns.index') }}" class="flex flex-col items-center justify-center flex-1 h-full transition-all {{ request()->routeIs('mobile.returns.*') ? 'text-indigo-600 font-bold' : 'text-gray-400' }}">
                     <i class="bi bi-arrow-return-left text-xl {{ request()->routeIs('mobile.returns.*') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
-                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.returns.*') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}">退货</span>
+                    <span class="text-xs mt-0.5 {{ request()->routeIs('mobile.returns.*') ? 'text-indigo-600 font-bold' : 'text-gray-500' }}"><x-lang key="mobile.navigation.returns"/></span>
                     @if(request()->routeIs('mobile.returns.*'))
                         <span class="block w-1 h-1 bg-indigo-500 rounded-full mt-0.5"></span>
                     @endif

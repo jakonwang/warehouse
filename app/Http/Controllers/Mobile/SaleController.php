@@ -258,48 +258,15 @@ class SaleController extends Controller
      */
     public function show(Sale $sale)
     {
-        // 使用 DB 查询替代 Eloquent 关系查询
-        $saleData = DB::table('sales')
-            ->leftJoin('users', 'sales.user_id', '=', 'users.id')
-            ->leftJoin('stores', 'sales.store_id', '=', 'stores.id')
-            ->select(
-                'sales.*',
-                'users.real_name as user_name',
-                'stores.name as store_name'
-            )
-            ->where('sales.id', $sale->id)
-            ->first();
+        // 加载关联数据
+        $sale->load([
+            'user:id,real_name',
+            'store:id,name',
+            'saleDetails.product',
+            'blindBagDeliveries.deliveryProduct'
+        ]);
 
-        // 获取销售详情
-        $saleDetails = DB::table('sale_details')
-            ->leftJoin('products', 'sale_details.product_id', '=', 'products.id')
-            ->select(
-                'sale_details.*',
-                'products.name as product_name',
-                'products.code as product_code',
-                'products.image as product_image'
-            )
-            ->where('sale_details.sale_id', $sale->id)
-            ->get();
-
-        // 获取盲袋发货信息
-        $blindBagDeliveries = DB::table('blind_bag_deliveries')
-            ->leftJoin('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
-            ->select(
-                'blind_bag_deliveries.*',
-                'products.name as delivery_product_name'
-            )
-            ->where('blind_bag_deliveries.sale_id', $sale->id)
-            ->get();
-
-        $saleData->sale_details = $saleDetails;
-        $saleData->blind_bag_deliveries = $blindBagDeliveries;
-        // 将字符串created_at转换为Carbon实例
-        if (!($saleData->created_at instanceof Carbon)) {
-            $saleData->created_at = Carbon::parse($saleData->created_at);
-        }
-
-        return view('mobile.sales.show', compact('saleData'));
+        return view('mobile.sales.show', compact('sale'));
     }
 
     /**

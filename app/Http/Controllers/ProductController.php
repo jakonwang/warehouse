@@ -21,6 +21,11 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
+        // 检查用户是否有查看商品的权限
+        if (!auth()->user()->canViewProducts()) {
+            abort(403, '您没有权限查看商品');
+        }
+
         // 构建查询
         $query = DB::table('products');
 
@@ -88,6 +93,11 @@ class ProductController extends Controller
      */
     public function create()
     {
+        // 检查用户是否有管理商品的权限
+        if (!auth()->user()->canManageProducts()) {
+            abort(403, '您没有权限创建商品');
+        }
+
         // 直接查询分类，不使用缓存
         $categories = DB::table('categories')
             ->where('is_active', true)
@@ -103,6 +113,11 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        // 检查用户是否有管理商品的权限
+        if (!auth()->user()->canManageProducts()) {
+            abort(403, '您没有权限创建商品');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50|unique:products',
@@ -166,6 +181,11 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        // 检查用户是否有查看商品的权限
+        if (!auth()->user()->canViewProducts()) {
+            abort(403, '您没有权限查看商品');
+        }
+
         // 获取商品库存信息
         $inventoryData = Cache::remember('product_inventory_' . $product->id, 300, function () use ($product) {
             return DB::table('inventory')
@@ -186,6 +206,11 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
+        // 检查用户是否有管理商品的权限
+        if (!auth()->user()->canManageProducts()) {
+            abort(403, '您没有权限编辑商品');
+        }
+
         // 直接查询分类，不使用缓存
         $categories = DB::table('categories')
             ->where('is_active', true)
@@ -201,6 +226,11 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
+        // 检查用户是否有管理商品的权限
+        if (!auth()->user()->canManageProducts()) {
+            abort(403, '您没有权限编辑商品');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:standard,blind_bag',
@@ -252,6 +282,11 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        // 检查用户是否有管理商品的权限
+        if (!auth()->user()->canManageProducts()) {
+            abort(403, '您没有权限删除商品');
+        }
+
         try {
             DB::beginTransaction();
 

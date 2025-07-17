@@ -42,7 +42,9 @@
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">系列编号</th>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">数量</th>
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">单价</th>
+                                    @if(auth()->user()->canViewProfitAndCost())
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">成本</th>
+                                    @endif
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">小计</th>
                                 </tr>
                             </thead>
@@ -55,16 +57,19 @@
                                         <input type="hidden" name="price_series[{{ $loop->index }}][code]" value="{{ $series->code }}">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-green-600">¥{{ number_format($series->price, 2) }}</td>
+                                    @if(auth()->user()->canViewProfitAndCost())
                                     <td class="px-6 py-4 whitespace-nowrap text-orange-600">¥{{ number_format($series->cost, 2) }}</td>
+                                    @endif
                                     <td class="px-6 py-4 whitespace-nowrap text-blue-600 font-bold subtotal">¥0.00</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th colspan="4" class="text-right px-6 py-3 text-gray-700">总计：</th>
+                                    <th colspan="{{ auth()->user()->canViewProfitAndCost() ? '4' : '3' }}" class="text-right px-6 py-3 text-gray-700">总计：</th>
                                     <th id="total-amount" class="px-6 py-3 text-blue-600">¥0.00</th>
                                 </tr>
+                                @if(auth()->user()->canViewProfitAndCost())
                                 <tr>
                                     <th colspan="4" class="text-right px-6 py-3 text-gray-700">总成本：</th>
                                     <th id="total-cost" class="px-6 py-3 text-orange-600">¥0.00</th>
@@ -77,6 +82,7 @@
                                     <th colspan="4" class="text-right px-6 py-3 text-gray-700">利润率：</th>
                                     <th id="profit-rate" class="px-6 py-3 text-yellow-600">0.00%</th>
                                 </tr>
+                                @endif
                             </tfoot>
                         </table>
                     </div>
@@ -119,12 +125,15 @@ $(document).ready(function() {
             totalAmount += subtotal;
             totalCost += cost;
         });
+        $('#total-amount').text('¥' + totalAmount.toFixed(2));
+        
+        @if(auth()->user()->canViewProfitAndCost())
         const totalProfit = totalAmount - totalCost;
         const profitRate = totalAmount > 0 ? (totalProfit / totalAmount) * 100 : 0;
-        $('#total-amount').text('¥' + totalAmount.toFixed(2));
         $('#total-cost').text('¥' + totalCost.toFixed(2));
         $('#total-profit').text('¥' + totalProfit.toFixed(2));
         $('#profit-rate').text(profitRate.toFixed(2) + '%');
+        @endif
     }
     $('.quantity-input').on('input', calculateTotals);
     calculateTotals();

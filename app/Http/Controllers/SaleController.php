@@ -33,7 +33,20 @@ class SaleController extends Controller
 
         $sales = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('sales.index', compact('sales'));
+        // 单独查询当天所有销售统计数据（不受分页影响）
+        $todayStatsQuery = \App\Models\Sale::whereIn('store_id', $userStoreIds);
+        if ($storeId) {
+            $todayStatsQuery->where('store_id', $storeId);
+        }
+        $todayStats = $todayStatsQuery->where('created_at', '>=', today())->get();
+
+        // 计算当天统计数据
+        $todaySales = $todayStats->sum('total_amount');
+        $todayProfit = $todayStats->sum('total_profit');
+        $todayOrders = $todayStats->count();
+        $avgProfitRate = $todayStats->count() > 0 ? $todayStats->avg('profit_rate') : 0;
+
+        return view('sales.index', compact('sales', 'todaySales', 'todayProfit', 'todayOrders', 'avgProfitRate'));
     }
 
     /**
@@ -201,33 +214,15 @@ class SaleController extends Controller
      */
     public function show(Sale $sale)
     {
-        // 使用 DB 查询替代 Eloquent 关系查询
-        $saleData = DB::table('sales')
-            ->leftJoin('users', 'sales.user_id', '=', 'users.id')
-            ->leftJoin('stores', 'sales.store_id', '=', 'stores.id')
-            ->select(
-                'sales.*',
-                'users.real_name as user_name',
-                'stores.name as store_name'
-            )
-            ->where('sales.id', $sale->id)
-            ->first();
+        // 加载关联数据
+        $sale->load([
+            'user:id,real_name',
+            'store:id,name',
+            'saleDetails.product',
+            'blindBagDeliveries.deliveryProduct'
+        ]);
 
-        // 获取销售详情
-        $saleDetails = DB::table('sale_details')
-            ->leftJoin('products', 'sale_details.product_id', '=', 'products.id')
-            ->select(
-                'sale_details.*',
-                'products.name as product_name',
-                'products.code as product_code',
-                'products.image as product_image'
-            )
-            ->where('sale_details.sale_id', $sale->id)
-            ->get();
-
-        $saleData->sale_details = $saleDetails;
-
-        return view('sales.show', compact('saleData'));
+        return view('sales.show', compact('sale'));
     }
 
     /**
@@ -383,7 +378,7 @@ class SaleController extends Controller
     public function mobileIndex()
     {
         // 使用 DB 查询替代 Eloquent 关系查询
-        $userStoreIds = auth()->user()->stores()->pluck('stores.id')->toArray();
+        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
         
         $salesData = DB::table('sales')
             ->leftJoin('users', 'sales.user_id', '=', 'users.id')

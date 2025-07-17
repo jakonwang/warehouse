@@ -4,16 +4,16 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6 space-y-6 pb-40">
-    <!-- 顶部导航 -->
+    <!-- {{ __('messages.mobile.blind_bag.top_navigation') }} -->
     <div class="card p-6">
         <div class="flex items-center justify-between mb-2">
             <a href="{{ route('mobile.sales.index') }}" class="text-gray-600">
                 <i class="bi bi-arrow-left text-xl"></i>
             </a>
-            <h1 class="text-xl font-semibold text-gray-900">🎲 <x-lang key="messages.mobile.blind_bag.title"/></h1>
+            <h1 class="text-xl font-semibold text-gray-900">🎲 <x-lang key="messages.mobile.sales.blind_bag_details.title"/></h1>
             <div class="w-6"></div>
         </div>
-        <p class="text-gray-600"><x-lang key="messages.mobile.blind_bag.subtitle"/></p>
+        <p class="text-gray-600"><x-lang key="messages.mobile.sales.blind_bag_details.subtitle"/></p>
     </div>
 
     @if ($errors->any())
@@ -35,9 +35,9 @@
     <form action="{{ route('mobile.blind-bag.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
-        <!-- 第1步：选择盲袋商品 -->
+        <!-- {{ __('messages.mobile.blind_bag.step1_title') }} -->
         <div class="card p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">🛍️ <x-lang key="messages.mobile.blind_bag.step1_title"/></h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">🛍️ <x-lang key="messages.mobile.sales.blind_bag_details.step1_title"/></h2>
             @if($blindBagProducts->count() > 0)
                 <div class="grid grid-cols-2 gap-4">
                     @foreach($blindBagProducts as $product)
@@ -57,16 +57,16 @@
             @else
                 <div class="text-center py-8">
                     <div class="text-4xl mb-4">📦</div>
-                    <p class="text-gray-600"><x-lang key="messages.mobile.blind_bag.no_products"/></p>
-                    <p class="text-sm text-gray-500 mt-2"><x-lang key="messages.mobile.blind_bag.create_in_backend"/></p>
+                    <p class="text-gray-600"><x-lang key="messages.mobile.sales.blind_bag_details.no_products"/></p>
+                    <p class="text-sm text-gray-500 mt-2"><x-lang key="messages.mobile.sales.blind_bag_details.create_in_backend"/></p>
                 </div>
             @endif
         </div>
 
-        <!-- 第2步：选择发货内容 -->
+        <!-- {{ __('messages.mobile.blind_bag.step2_title') }} -->
         <div id="delivery-content" class="card p-6" style="display: none;">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">📦 <x-lang key="messages.mobile.blind_bag.step2_title"/></h2>
-            <p class="text-sm text-gray-600 mb-4"><x-lang key="messages.mobile.blind_bag.step2_desc"/></p>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📦 <x-lang key="messages.mobile.sales.blind_bag_details.step2_title"/></h2>
+            <p class="text-sm text-gray-600 mb-4"><x-lang key="messages.mobile.sales.blind_bag_details.step2_desc"/></p>
             
             @if($availableProducts->count() > 0)
                 <div class="space-y-4">
@@ -75,7 +75,7 @@
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <span class="text-lg font-bold text-gray-900">{{ $product->name }}</span>
-                                <p class="text-sm text-gray-500"><x-lang key="messages.mobile.blind_bag.cost"/>: ¥{{ $product->cost_price }} | <x-lang key="messages.mobile.blind_bag.stock"/>: <span class="stock-display" data-product="{{ $product->id }}">{{ $product->stock }}</span></p>
+                                <p class="text-sm text-gray-500"><x-lang key="messages.mobile.sales.blind_bag_details.cost"/>: ¥{{ $product->cost_price }} | <x-lang key="messages.mobile.sales.blind_bag_details.stock"/>: <span class="stock-display" data-product="{{ $product->id }}">{{ $product->stock }}</span></p>
                             </div>
                         </div>
                         
@@ -97,7 +97,7 @@
                                        data-cost="{{ $product->cost_price }}"
                                        data-name="{{ $product->name }}"
                                        data-product="{{ $product->id }}">
-                                <p class="text-xs text-gray-500 mt-1"><x-lang key="messages.mobile.blind_bag.delivery_quantity"/></p>
+                                <p class="text-xs text-gray-500 mt-1"><x-lang key="messages.mobile.sales.blind_bag_details.delivery_quantity"/></p>
                             </div>
                             
                             <button type="button" 
@@ -107,9 +107,9 @@
                             </button>
                         </div>
                         
-                        <!-- 小计显示 -->
+                        <!-- {{ __('messages.mobile.blind_bag.subtotal_display') }} -->
                         <div class="mt-3 pt-3 border-t border-gray-200 text-center">
-                            <span class="text-sm text-gray-600"><x-lang key="messages.mobile.blind_bag.cost_subtotal"/>: </span>
+                            <span class="text-sm text-gray-600"><x-lang key="messages.mobile.sales.blind_bag_details.cost_subtotal"/>: </span>
                             <span id="cost_{{ $product->id }}" class="text-sm font-bold text-red-600">¥0.00</span>
                         </div>
                     </div>
@@ -118,54 +118,54 @@
             @else
                 <div class="text-center py-8">
                     <div class="text-4xl mb-4">📭</div>
-                    <p class="text-gray-600"><x-lang key="messages.mobile.blind_bag.no_delivery_products"/></p>
-                    <p class="text-sm text-gray-500 mt-2"><x-lang key="messages.mobile.blind_bag.all_out_of_stock"/></p>
+                    <p class="text-gray-600"><x-lang key="messages.mobile.sales.blind_bag_details.no_delivery_products"/></p>
+                    <p class="text-sm text-gray-500 mt-2"><x-lang key="messages.mobile.sales.blind_bag_details.all_out_of_stock"/></p>
                 </div>
             @endif
         </div>
 
-        <!-- 第3步：实时成本和利润计算 -->
+        <!-- {{ __('messages.mobile.blind_bag.step3_title') }} -->
         <div id="profit-calculation" class="card p-6" style="display: none;">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 <x-lang key="messages.mobile.blind_bag.step3_title"/></h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 <x-lang key="messages.mobile.sales.blind_bag_details.step3_title"/></h2>
             
-            <!-- 发货内容摘要 -->
+            <!-- {{ __('messages.mobile.blind_bag.delivery_summary') }} -->
             <div class="bg-blue-50 rounded-lg p-4 mb-4 border border-blue-200">
-                <h3 class="text-sm font-semibold text-blue-900 mb-2"><x-lang key="messages.mobile.blind_bag.delivery_content"/>：</h3>
+                <h3 class="text-sm font-semibold text-blue-900 mb-2"><x-lang key="messages.mobile.sales.blind_bag_details.delivery_content"/>：</h3>
                 <div id="delivery-summary" class="text-sm text-blue-800">
-                    <x-lang key="messages.mobile.blind_bag.please_select_delivery"/>
+                    <x-lang key="messages.mobile.sales.blind_bag_details.please_select_delivery"/>
                 </div>
             </div>
 
             <div class="grid grid-cols-3 gap-4">
                 <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
                     <div id="sale_amount" class="text-lg font-bold text-green-600">¥0.00</div>
-                    <p class="text-xs text-gray-500"><x-lang key="messages.mobile.blind_bag.sale_revenue"/></p>
+                    <p class="text-xs text-gray-500"><x-lang key="messages.mobile.sales.blind_bag_details.sale_revenue"/></p>
                 </div>
                 <div class="text-center p-3 bg-red-50 rounded-lg border border-red-200">
                     <div id="total_delivery_cost" class="text-lg font-bold text-red-600">¥0.00</div>
-                    <p class="text-xs text-gray-500"><x-lang key="messages.mobile.blind_bag.delivery_cost"/></p>
+                    <p class="text-xs text-gray-500"><x-lang key="messages.mobile.sales.blind_bag_details.delivery_cost"/></p>
                 </div>
                 <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
                     <div id="net_profit" class="text-lg font-bold text-purple-600">¥0.00</div>
-                    <p class="text-xs text-gray-500"><x-lang key="messages.mobile.blind_bag.net_profit"/></p>
+                    <p class="text-xs text-gray-500"><x-lang key="messages.mobile.sales.blind_bag_details.net_profit"/></p>
                 </div>
             </div>
             
             <div class="mt-4 text-center">
-                <span class="text-sm text-gray-600"><x-lang key="messages.mobile.blind_bag.profit_margin"/>: </span>
+                <span class="text-sm text-gray-600"><x-lang key="messages.mobile.sales.blind_bag_details.profit_margin"/>: </span>
                 <span id="profit_margin" class="text-lg font-bold text-orange-600">0%</span>
             </div>
         </div>
 
-        <!-- 客户信息 -->
+        <!-- {{ __('messages.mobile.blind_bag.customer_info') }} -->
         <div id="customer-info" class="card p-6" style="display: none;">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">👤 <x-lang key="messages.mobile.blind_bag.customer_info"/></h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">👤 <x-lang key="messages.mobile.sales.blind_bag_details.customer_info"/></h2>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium mb-2"><x-lang key="messages.mobile.blind_bag.customer_name"/></label>
+                    <label class="block text-sm font-medium mb-2"><x-lang key="messages.mobile.sales.blind_bag_details.customer_name"/></label>
                     <input type="text" name="customer_name" value="{{ old('customer_name') }}" 
                            class="form-input w-full px-3 py-2 rounded-lg border" 
-                           placeholder="<x-lang key="messages.mobile.blind_bag.customer_name_placeholder"/>">
+                           placeholder="<x-lang key="messages.mobile.sales.blind_bag_details.customer_name_placeholder"/>">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2"><x-lang key="messages.mobile.blind_bag.customer_phone"/></label>
@@ -176,13 +176,13 @@
             </div>
         </div>
 
-        <!-- 销售照片 -->
+        <!-- {{ __('messages.mobile.blind_bag.sales_photo') }} -->
         <div id="photo-section" class="card p-6" style="display: none;">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">📷 <x-lang key="messages.mobile.blind_bag.sale_photo"/></h2>
             <div class="space-y-4">
                 <input type="file" name="photo" id="photo" accept="image/*" capture="environment" class="hidden">
                 <div id="photo-preview" class="hidden relative">
-                    <img src="" alt="预览图" class="w-full h-48 object-cover rounded-lg">
+                    <img src="" alt="{{ __('messages.mobile.blind_bag.preview_image') }}" class="w-full h-48 object-cover rounded-lg">
                     <button type="button" id="remove-photo" class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-red-500 rounded-full text-white hover:bg-red-600">
                         <i class="bi bi-x text-lg"></i>
                     </button>
@@ -194,16 +194,16 @@
             </div>
         </div>
 
-        <!-- 提交按钮 -->
+        <!-- {{ __('messages.mobile.blind_bag.submit_button') }} -->
         <div id="submit-section" class="card p-6" style="display: none;">
             <button type="submit" id="submit-btn" disabled class="btn-primary w-full py-4 text-white font-semibold rounded-lg shadow-lg opacity-50 cursor-not-allowed">
                 <i class="bi bi-box-seam mr-2"></i>
-                确认发货并记录销售
+                <x-lang key="messages.mobile.blind_bag.submit_button"/>
             </button>
-            <p class="text-xs text-gray-500 text-center mt-2">请先选择盲袋商品和发货内容</p>
+                            <p class="text-xs text-gray-500 text-center mt-2"><x-lang key="messages.mobile.blind_bag.submit_hint"/></p>
         </div>
 
-        <!-- 隐藏字段 -->
+        <!-- {{ __('messages.mobile.blind_bag.hidden_fields') }} -->
         <input type="hidden" name="sale_amount" id="hidden_sale_amount" value="0">
         <input type="hidden" name="total_cost" id="hidden_total_cost" value="0">
         <input type="hidden" name="profit" id="hidden_profit" value="0">
@@ -215,12 +215,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedBlindBagPrice = 0;
     let canSubmit = false;
 
-    // 盲袋选择
+    // {{ __('messages.mobile.blind_bag.select_blind_bag') }}
     document.querySelectorAll('.blind-bag-radio').forEach(radio => {
         radio.addEventListener('change', function() {
             selectedBlindBagPrice = parseFloat(this.dataset.price);
             
-            // 更新UI状态
+            // {{ __('messages.mobile.blind_bag.update_ui_status') }}
             document.querySelectorAll('.blind-bag-card').forEach(card => {
                 card.classList.remove('border-blue-500', 'bg-blue-50');
                 card.classList.add('border-gray-200');
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.nextElementSibling.classList.remove('border-gray-200');
             this.nextElementSibling.classList.add('border-blue-500', 'bg-blue-50');
             
-            // 显示后续步骤
+            // {{ __('messages.mobile.blind_bag.show_next_steps') }}
             document.getElementById('delivery-content').style.display = 'block';
             document.getElementById('profit-calculation').style.display = 'block';
             document.getElementById('customer-info').style.display = 'block';
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 发货数量加减按钮
+    // {{ __('messages.mobile.blind_bag.delivery_quantity_buttons') }}
     document.querySelectorAll('.delivery-btn').forEach(button => {
         button.addEventListener('click', function() {
             const targetId = this.dataset.target;

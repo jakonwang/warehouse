@@ -74,6 +74,7 @@
                         <div class="text-2xl font-bold text-green-600">¥{{ number_format($product->saleDetails->sum('total'), 0) }}</div>
                         <div class="text-xs text-gray-500 mt-1">总销售额</div>
                     </div>
+                    @if(auth()->user()->canViewProfitAndCost())
                     <div class="text-center">
                         <div class="text-2xl font-bold text-{{ $product->saleDetails->sum('profit') >= 0 ? 'emerald' : 'red' }}-600">¥{{ number_format($product->saleDetails->sum('profit'), 0) }}</div>
                         <div class="text-xs text-gray-500 mt-1">总利润</div>
@@ -87,6 +88,7 @@
                         <div class="text-2xl font-bold text-{{ $avgProfitRate >= 0 ? 'emerald' : 'red' }}-600">{{ number_format($avgProfitRate, 1) }}%</div>
                         <div class="text-xs text-gray-500 mt-1">平均利润率</div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -105,7 +107,7 @@
                         <div class="text-2xl font-bold text-green-700">¥{{ number_format($product->price, 2) }}</div>
                     </div>
                     
-                    @if($product->isStandard())
+                    @if($product->isStandard() && auth()->user()->canViewProfitAndCost())
                     <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-200">
                         <div class="text-sm text-orange-600 font-medium mb-1">成本价</div>
                         <div class="text-2xl font-bold text-orange-700">¥{{ number_format($product->cost_price, 2) }}</div>

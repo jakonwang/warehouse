@@ -122,7 +122,7 @@ class DashboardController extends Controller
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('store_id', $userStoreIds);
         }
         $result = $query->selectRaw('
@@ -177,7 +177,7 @@ class DashboardController extends Controller
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('inventory.store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('inventory.store_id', $userStoreIds);
         }
         return $query->limit(5)->get();
@@ -202,7 +202,7 @@ class DashboardController extends Controller
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('sales.store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('sales.store_id', $userStoreIds);
         }
         return $query->groupBy('products.id', 'products.name', 'products.code', 'products.description', 'products.price', 'products.cost_price', 'products.image', 'products.type', 'products.is_active', 'products.created_at', 'products.updated_at')
@@ -228,7 +228,7 @@ class DashboardController extends Controller
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('stores.id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('stores.id', $userStoreIds);
         }
         return $query->groupBy('stores.id', 'stores.name', 'stores.address', 'stores.phone', 'stores.manager', 'stores.is_active', 'stores.created_at', 'stores.updated_at')
@@ -314,7 +314,7 @@ class DashboardController extends Controller
                 $query->where('store_id', $currentStoreId);
                 \Log::info('使用当前仓库ID筛选', ['store_id' => $currentStoreId]);
             } elseif (!$user->isSuperAdmin()) {
-                $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
                 $query->whereIn('store_id', $userStoreIds);
                 \Log::info('使用用户仓库ID筛选', ['userStoreIds' => $userStoreIds]);
             }

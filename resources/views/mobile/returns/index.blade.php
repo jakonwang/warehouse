@@ -32,17 +32,17 @@
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4"><x-lang key="messages.mobile.returns.basic_info"/></h2>
             <div class="space-y-4">
-                <!-- 当前仓库显示 -->
+                <!-- 仓库选择 -->
                 <div>
-                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="messages.mobile.returns.current_store"/></label>
-                    <div class="form-input w-full px-3 py-2 rounded-lg border bg-gray-50 text-gray-700">
-                        @if($storeId && $stores->where('id', $storeId)->first())
-                            {{ $stores->where('id', $storeId)->first()->name }}
-                        @else
-                            <span class="text-gray-500">请先选择仓库</span>
-                        @endif
-                    </div>
-                    <input type="hidden" name="store_id" value="{{ $storeId }}">
+                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="messages.mobile.returns.select_store"/></label>
+                    <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border" required>
+                        <option value=""><x-lang key="messages.mobile.returns.please_select_store"/></option>
+                        @foreach($stores as $store)
+                            <option value="{{ $store->id }}" {{ $storeId == $store->id ? 'selected' : '' }}>
+                                {{ $store->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <!-- 客户信息 -->

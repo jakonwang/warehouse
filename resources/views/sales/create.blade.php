@@ -415,6 +415,7 @@
                                 <span class="text-sm font-medium text-gray-700"><x-lang key="messages.sales.create.sales_amount_label"/></span>
                                 <span class="text-lg font-bold text-blue-600" x-text="'¥' + standardTotalAmount.toFixed(2)"></span>
                             </div>
+                            @if(auth()->user()->canViewProfitAndCost())
                             <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                                 <span class="text-sm font-medium text-gray-700"><x-lang key="messages.sales.create.sales_cost_label"/></span>
                                 <span class="text-lg font-bold text-orange-600" x-text="'¥' + standardTotalCost.toFixed(2)"></span>
@@ -427,6 +428,7 @@
                                 <span class="text-sm font-medium text-gray-700"><x-lang key="messages.sales.create.profit_rate_label"/></span>
                                 <span class="text-lg font-bold text-yellow-600" x-text="standardProfitRate.toFixed(1) + '%'"></span>
                             </div>
+                            @endif
                         </div>
                     </div>
 
@@ -446,6 +448,7 @@
                                 <span class="text-sm font-medium text-gray-700"><x-lang key="messages.sales.create.delivery_quantity_label"/></span>
                                 <span class="text-lg font-bold text-green-600" x-text="blindBagTotalQuantity + ' <x-lang key="messages.sales.create.pieces"/>'"></span>
                             </div>
+                            @if(auth()->user()->canViewProfitAndCost())
                             <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                                 <span class="text-sm font-medium text-gray-700"><x-lang key="messages.sales.create.actual_cost_label"/></span>
                                 <span class="text-lg font-bold text-orange-600" x-text="'¥' + blindBagTotalCost.toFixed(2)"></span>
@@ -458,6 +461,7 @@
                                 <span class="text-sm font-medium text-gray-700"><x-lang key="messages.sales.create.profit_rate_label"/></span>
                                 <span class="text-lg font-bold text-yellow-600" x-text="blindBagProfitRate.toFixed(1) + '%'"></span>
                             </div>
+                            @endif
                         </div>
                     </div>
 

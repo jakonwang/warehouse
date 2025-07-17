@@ -17,63 +17,16 @@ class StockOutController extends Controller
      */
     public function index()
     {
-        // 使用 DB 查询替代 Eloquent 关系查询
-        $storeId = request('store_id');
-        $userStoreIds = auth()->user()->stores()->pluck('stores.id')->toArray();
-        
-        $query = DB::table('stock_out_records')
-            ->leftJoin('users', 'stock_out_records.user_id', '=', 'users.id')
-            ->leftJoin('stores', 'stock_out_records.store_id', '=', 'stores.id')
-            ->select(
-                'stock_out_records.*',
-                'users.real_name as user_name',
-                'stores.name as store_name'
-            )
-            ->whereIn('stock_out_records.store_id', $userStoreIds);
-
+        $storeId = request('store_id', session('current_store_id'));
+        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
+        $query = StockOutRecord::with(['user', 'store', 'stockOutDetails.product'])
+            ->whereIn('store_id', $userStoreIds);
         if ($storeId) {
-            $query->where('stock_out_records.store_id', $storeId);
+            $query->where('store_id', $storeId);
         }
-
-        $recordsData = $query->orderBy('stock_out_records.created_at', 'desc')
-            ->paginate(10);
-
-        // 获取出库详情
-        $recordIds = $recordsData->pluck('id')->toArray();
-        $stockOutDetails = [];
-        if (!empty($recordIds)) {
-            $details = DB::table('stock_out_details')
-                ->leftJoin('price_series', 'stock_out_details.series_code', '=', 'price_series.code')
-                ->select(
-                    'stock_out_details.*',
-                    'price_series.name as series_name',
-                    'price_series.code as series_code'
-                )
-                ->whereIn('stock_out_details.stock_out_record_id', $recordIds)
-                ->get();
-            
-            foreach ($details as $detail) {
-                $stockOutDetails[$detail->stock_out_record_id][] = $detail;
-            }
-        }
-
-        // 转换为对象以保持视图兼容性
-        $records = new \Illuminate\Pagination\LengthAwarePaginator(
-            $recordsData->items(),
-            $recordsData->total(),
-            $recordsData->perPage(),
-            $recordsData->currentPage(),
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
-
-        // 为每个记录添加关系数据
-        foreach ($records as $record) {
-            $record->stock_out_details = $stockOutDetails[$record->id] ?? [];
-        }
-
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
-
-        return view('stock-out.index', compact('records', 'stores'));
+        $stockOuts = $query->orderBy('created_at', 'desc')->paginate(10);
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
+        return view('stock-out.index', compact('stockOuts', 'stores'));
     }
 
     /**
@@ -82,7 +35,7 @@ class StockOutController extends Controller
     public function create()
     {
         $priceSeries = PriceSeries::all();
-        $stores = auth()->user()->stores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->get();
         return view('stock-out.create', compact('priceSeries', 'stores'));
     }
 

@@ -115,6 +115,7 @@
                                     <span class="text-sm text-gray-600">成本价格</span>
                                     <span class="text-lg font-semibold text-gray-900">¥{{ number_format($series->cost, 2) }}</span>
                                 </div>
+                                @if(auth()->user()->canViewProfitAndCost())
                                 <div class="flex items-center justify-between p-3 bg-white rounded-lg">
                                     <span class="text-sm text-gray-600">利润率</span>
                                     <span class="text-lg font-semibold text-green-600">{{ number_format((($series->code - $series->cost) / $series->code) * 100, 1) }}%</span>
@@ -123,6 +124,7 @@
                                     <span class="text-sm text-gray-600">利润金额</span>
                                     <span class="text-lg font-semibold text-blue-600">¥{{ number_format($series->code - $series->cost, 2) }}</span>
                                 </div>
+                                @endif
                             </div>
 
                             <!-- 创建时间 -->

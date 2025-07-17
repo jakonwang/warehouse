@@ -177,6 +177,7 @@
         </div>
 
         <!-- 利润率 -->
+        @if(auth()->user()->canViewProfitAndCost())
         <div class="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
@@ -191,6 +192,7 @@
                 <span class="text-orange-200 ml-1"><x-lang key="messages.statistics.sales.vs_last_month"/></span>
             </div>
         </div>
+        @endif
     </div>
 
     <!-- 图表区域 -->
@@ -258,9 +260,11 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">销售员</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">仓库</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">销售额</th>
+                        @if(auth()->user()->canViewProfitAndCost())
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成本</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">利润</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">利润率</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -271,6 +275,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $record['user'] }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $record['store'] }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">¥{{ number_format($record['total_amount'], 2) }}</td>
+                        @if(auth()->user()->canViewProfitAndCost())
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">¥{{ number_format($record['total_cost'], 2) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <span class="font-medium {{ $record['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">¥{{ number_format($record['profit'], 2) }}</span>
@@ -278,10 +283,11 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <span class="font-medium {{ $record['profit_rate'] >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($record['profit_rate'], 1) }}%</span>
                         </td>
+                        @endif
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                        <td colspan="{{ auth()->user()->canViewProfitAndCost() ? '8' : '5' }}" class="px-6 py-8 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <i class="bi bi-graph-up text-4xl text-gray-300 mb-2"></i>
                                 <p class="text-lg font-medium">暂无销售数据</p>
