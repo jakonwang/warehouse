@@ -4,8 +4,8 @@
 <div class="container mx-auto px-4 py-6 space-y-6 pb-4" x-data="stockInManager()" x-init="init()">
     <!-- 标题 -->
     <div class="card p-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">📦 <x-lang key="messages.mobile.stock_in.title"/></h1>
-        <p class="text-gray-600"><x-lang key="messages.mobile.stock_in.subtitle"/></p>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">📦 <x-lang key="mobile.stock_in.title"/></h1>
+        <p class="text-gray-600"><x-lang key="mobile.stock_in.subtitle"/></p>
     </div>
 
     @if (session('success'))
@@ -18,7 +18,7 @@
         <div class="card p-4 border-l-4 border-red-500 bg-red-50">
             <ul class="text-red-700 space-y-1">
                 @foreach ($errors->all() as $error)
-                    <li>• {{ $error }}</li>
+                    <li>�?{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
@@ -30,13 +30,13 @@
 
         <!-- 基本信息 -->
         <div class="card p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4"><x-lang key="messages.mobile.stock_in.basic_info"/></h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4"><x-lang key="mobile.stock_in.basic_info"/></h2>
             <div class="space-y-4">
                 <!-- 仓库选择 -->
                 <div>
-                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="messages.mobile.stock_in.select_store"/></label>
+                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.stock_in.select_store"/></label>
                     <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border" required>
-                        <option value=""><x-lang key="messages.mobile.stock_in.please_select_store"/></option>
+                        <option value=""><x-lang key="mobile.stock_in.please_select_store"/></option>
                         @foreach($stores as $store)
                             <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>
                                 {{ $store->name }}
@@ -45,18 +45,18 @@
                     </select>
                 </div>
 
-                <!-- 供应商 -->
+                <!-- 供应�?-->
                 <div>
-                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="messages.mobile.stock_in.supplier"/></label>
+                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.stock_in.supplier"/></label>
                     <input type="text" name="supplier" value="{{ old('supplier') }}" 
-                        class="form-input w-full px-3 py-2 rounded-lg border" placeholder="<x-lang key="messages.mobile.stock_in.supplier_placeholder"/>">
+                        class="form-input w-full px-3 py-2 rounded-lg border" placeholder="<x-lang key="mobile.stock_in.supplier_placeholder"/>">
                 </div>
 
                 <!-- 备注 -->
                 <div>
-                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="messages.mobile.stock_in.remark"/></label>
+                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.stock_in.remark"/></label>
                     <textarea name="remark" rows="2" class="form-input w-full px-3 py-2 rounded-lg border" 
-                        placeholder="<x-lang key="messages.mobile.stock_in.remark_placeholder"/>">{{ old('remark') }}</textarea>
+                        placeholder="<x-lang key="mobile.stock_in.remark_placeholder"/>">{{ old('remark') }}</textarea>
                 </div>
             </div>
         </div>
@@ -64,10 +64,10 @@
         <!-- 商品入库 -->
         <div class="card p-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">💰 <x-lang key="messages.mobile.stock_in.products"/></h2>
+                <h2 class="text-lg font-semibold text-gray-900">💰 <x-lang key="mobile.stock_in.products"/></h2>
                 <button type="button" @click="addProduct()" class="btn-primary px-4 py-2 text-sm">
                     <i class="bi bi-plus mr-1"></i>
-                    <x-lang key="messages.mobile.stock_in.add_product"/>
+                    <x-lang key="mobile.stock_in.add_product"/>
                 </button>
             </div>
             
@@ -78,15 +78,15 @@
                         <div class="grid grid-cols-1 gap-4">
                             <!-- 商品选择 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.mobile.stock_in.select_product"/></label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.stock_in.select_product"/></label>
                                 <select :name="'products[' + index + '][id]'" x-model="item.id" @change="updateProductInfo(index)" required 
                                         class="form-input w-full px-3 py-2 rounded-lg border">
-                                    <option value=""><x-lang key="messages.mobile.stock_in.please_select_product"/></option>
+                                    <option value=""><x-lang key="mobile.stock_in.please_select_product"/></option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}" 
                                                 data-cost="{{ $product->cost_price }}"
                                                 data-name="{{ $product->name }}">
-                                            {{ $product->name }} (<x-lang key="messages.mobile.stock_in.cost"/>¥{{ $product->cost_price }})
+                                            {{ $product->name }} (<x-lang key="mobile.stock_in.cost"/>¥{{ $product->cost_price }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -94,7 +94,7 @@
                             
                             <!-- 入库数量 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.mobile.stock_in.stock_in_quantity"/></label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.stock_in.stock_in_quantity"/></label>
                                 <input type="number" :name="'products[' + index + '][quantity]'" x-model="item.quantity" 
                                        @input="calculateAmount(index)" required min="1"
                                        class="form-input w-full px-3 py-2 rounded-lg border text-center text-lg font-semibold" 
@@ -103,7 +103,7 @@
                             
                             <!-- 小计金额 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.mobile.stock_in.subtotal"/></label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.stock_in.subtotal"/></label>
                                 <div class="px-3 py-2 bg-gray-100 rounded-lg text-gray-700 font-medium text-center" x-text="'¥' + (item.total_amount || 0).toFixed(2)"></div>
                             </div>
                             
@@ -111,34 +111,34 @@
                             <div>
                                 <button type="button" @click="removeProduct(index)" class="w-full px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                                     <i class="bi bi-trash mr-1"></i>
-                                    <x-lang key="messages.mobile.stock_in.remove"/>
+                                    <x-lang key="mobile.stock_in.remove"/>
                                 </button>
                             </div>
                         </div>
                     </div>
                 </template>
                 
-                <!-- 空状态 -->
+                <!-- 空状�?-->
                 <div x-show="formData.products.length === 0" class="text-center py-8 text-gray-500">
                     <i class="bi bi-box text-4xl mb-2"></i>
-                    <p><x-lang key="messages.mobile.stock_in.no_products"/></p>
+                    <p><x-lang key="mobile.stock_in.no_products"/></p>
                 </div>
             </div>
             
-            <!-- 汇总信息 -->
+            <!-- 汇总信�?-->
             <div class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <h4 class="text-md font-semibold text-blue-900 mb-3"><x-lang key="messages.mobile.stock_in.summary"/></h4>
+                <h4 class="text-md font-semibold text-blue-900 mb-3"><x-lang key="mobile.stock_in.summary"/></h4>
                 <div class="grid grid-cols-3 gap-4">
                     <div class="text-center">
-                        <div class="text-sm text-blue-600"><x-lang key="messages.mobile.stock_in.total_quantity"/></div>
+                        <div class="text-sm text-blue-600"><x-lang key="mobile.stock_in.total_quantity"/></div>
                         <div class="text-lg font-bold text-blue-700" x-text="getTotalQuantity()"></div>
                     </div>
                     <div class="text-center">
-                        <div class="text-sm text-blue-600"><x-lang key="messages.mobile.stock_in.total_amount"/></div>
+                        <div class="text-sm text-blue-600"><x-lang key="mobile.stock_in.total_amount"/></div>
                         <div class="text-lg font-bold text-blue-700" x-text="'¥' + getTotalAmount().toFixed(2)"></div>
                     </div>
                     <div class="text-center">
-                        <div class="text-sm text-blue-600"><x-lang key="messages.mobile.stock_in.product_types"/></div>
+                        <div class="text-sm text-blue-600"><x-lang key="mobile.stock_in.product_types"/></div>
                         <div class="text-lg font-bold text-blue-700" x-text="formData.products.length"></div>
                     </div>
                 </div>
@@ -149,15 +149,15 @@
         <div class="card p-6">
             <button type="submit" class="btn-primary w-full py-4 text-white font-semibold rounded-lg shadow-lg">
                 <i class="bi bi-box-arrow-in-down mr-2"></i>
-                <x-lang key="messages.mobile.stock_in.confirm_stock_in"/>
+                <x-lang key="mobile.stock_in.confirm_stock_in"/>
             </button>
         </div>
     </form>
 
-    <!-- 最近入库记录 -->
+    <!-- 最近入库记�?-->
     @if(isset($recentRecords) && $recentRecords->count() > 0)
         <div class="card p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 <x-lang key="messages.mobile.stock_in.recent_records"/></h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 <x-lang key="mobile.stock_in.recent_records"/></h2>
             <div class="space-y-3">
                 @foreach($recentRecords as $record)
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -172,12 +172,12 @@
                         <div class="flex flex-wrap gap-1">
                             @foreach($record->stockInDetails as $detail)
                                 <span class="text-xs bg-white px-2 py-1 rounded border">
-                                    {{ $detail->product->name ?? __('messages.mobile.stock_in.unknown_product') }} × {{ $detail->quantity }}
+                                    {{ $detail->product->name ?? __('mobile.stock_in.unknown_product') }} × {{ $detail->quantity }}
                                 </span>
                             @endforeach
                         </div>
                         @if($record->supplier)
-                            <p class="text-xs text-gray-500 mt-1"><x-lang key="messages.mobile.stock_in.supplier"/>: {{ $record->supplier }}</p>
+                            <p class="text-xs text-gray-500 mt-1"><x-lang key="mobile.stock_in.supplier"/>: {{ $record->supplier }}</p>
                         @endif
                     </div>
                 @endforeach

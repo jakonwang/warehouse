@@ -171,7 +171,7 @@
                         <!-- 移动端入口卡片（右上角，target=_blank） -->
                         <a href="{{ route('mobile.dashboard') }}" target="_blank" class="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 font-semibold shadow hover:from-orange-200 hover:to-red-200 transition-all duration-200">
                             <i class="bi bi-phone text-xl mr-2"></i>
-                            {{ __('messages.mobile.title') }}
+                            {{ __('mobile.title') }}
                             <i class="bi bi-phone-fill text-lg ml-2"></i>
                         </a>
                         <!-- 语言切换器 -->

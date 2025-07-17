@@ -4,7 +4,7 @@
 <div class="container mx-auto px-4 py-6 space-y-6 pb-4" x-data="returnForm" x-init="init()">
     <!-- 标题 -->
     <div class="card p-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">✏️ 编辑退货</h1>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">✏️ 编辑退�?/h1>
         <p class="text-gray-600">修改退货记录，自动更新库存</p>
     </div>
 
@@ -18,13 +18,13 @@
         <div class="card p-4 border-l-4 border-red-500 bg-red-50">
             <ul class="text-red-700 space-y-1">
                 @foreach ($errors->all() as $error)
-                    <li>• {{ $error }}</li>
+                    <li>�?{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
     @endif
 
-    <!-- 退货表单 -->
+    <!-- 退货表�?-->
     <form action="{{ route('mobile.returns.update', $returnRecord->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
@@ -50,15 +50,15 @@
                 <div>
                     <label class="form-label block text-sm font-medium mb-2">客户信息（可选）</label>
                     <input type="text" name="customer" value="{{ $returnRecord->customer }}" 
-                        class="form-input w-full px-3 py-2 rounded-lg border" placeholder="输入客户姓名或联系方式">
+                        class="form-input w-full px-3 py-2 rounded-lg border" placeholder="输入客户姓名或联系方�?>
                 </div>
 
-                <!-- 退货照片 -->
+                <!-- 退货照�?-->
                 <div>
                     <label class="form-label block text-sm font-medium mb-2">退货照片（可选）</label>
                     <input type="file" name="image" accept="image/*" 
                         class="form-input w-full px-3 py-2 rounded-lg border">
-                    <p class="text-xs text-gray-500 mt-1">支持JPG、PNG格式，最大2MB</p>
+                    <p class="text-xs text-gray-500 mt-1">支持JPG、PNG格式，最�?MB</p>
                 </div>
 
                 <!-- 备注 -->
@@ -72,7 +72,7 @@
 
         <!-- 商品选择 -->
         <div class="card p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 退货商品</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 退货商�?/h2>
             <div class="grid grid-cols-2 gap-4">
                 @foreach($products as $product)
                     @php
@@ -93,20 +93,20 @@
                             @input="updateQuantity('{{ $product->id }}', $event.target.value)"
                             class="form-input w-full px-3 py-2 rounded-lg border text-center text-lg font-semibold" 
                             placeholder="0" min="0" step="1">
-                        <p class="text-xs text-gray-500 mt-1 text-center">退货数量</p>
+                        <p class="text-xs text-gray-500 mt-1 text-center">退货数�?/p>
                     </div>
                 @endforeach
             </div>
-            <!-- 退货统计 -->
+            <!-- 退货统�?-->
             <div class="bg-red-50 rounded-lg p-4 mt-4">
-                <h4 class="text-md font-semibold text-red-900 mb-3">退货统计</h4>
+                <h4 class="text-md font-semibold text-red-900 mb-3">退货统�?/h4>
                 <div class="grid grid-cols-3 gap-4">
                     <div class="text-center">
-                        <p class="text-sm text-red-600">退货数量</p>
-                        <p class="text-lg font-bold text-red-700" x-text="totalQuantity + ' 件'"></p>
+                        <p class="text-sm text-red-600">退货数�?/p>
+                        <p class="text-lg font-bold text-red-700" x-text="totalQuantity + ' �?"></p>
                     </div>
                     <div class="text-center">
-                        <p class="text-sm text-red-600">退货金额</p>
+                        <p class="text-sm text-red-600">退货金�?/p>
                         <p class="text-lg font-bold text-red-700" x-text="'¥' + totalAmount.toFixed(2)"></p>
                     </div>
                     <div class="text-center">
@@ -126,7 +126,7 @@
             
             @if($returnRecord->canDelete())
                 <form action="{{ route('mobile.returns.destroy', $returnRecord->id) }}" method="POST" 
-                      onsubmit="return confirm('确定要删除这条退货记录吗？')">
+                      onsubmit="return confirm('确定要删除这条退货记录吗�?)">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="w-full py-4 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition-colors">
@@ -163,7 +163,7 @@ document.addEventListener('alpine:init', () => {
             this.formData.products[id].quantity = quantity;
         },
         init() {
-            // 初始化所有商品的价格和成本，并预填数量
+            // 初始化所有商品的价格和成本，并预填数�?
             @foreach($products as $product)
                 this.formData.products['{{ $product->id }}'] = {
                     quantity: {{ $returnRecord->returnDetails->where('product_id', $product->id)->first()?->quantity ?? 0 }},
