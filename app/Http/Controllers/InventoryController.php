@@ -41,7 +41,58 @@ class InventoryController extends Controller
             $query->whereIn('store_id', $userStoreIds);
         }
         $inventory = $query->orderBy('product_id')->paginate(10);
-        return view('inventory.index', compact('inventory'));
+        
+        // 计算库存周转率（基于过去30天数据）
+        $turnoverRate = $this->calculateTurnoverRate($currentStoreId, $user);
+        
+        return view('inventory.index', compact('inventory', 'turnoverRate'));
+    }
+    
+    /**
+     * 计算库存周转率
+     */
+    private function calculateTurnoverRate($currentStoreId, $user)
+    {
+        try {
+            $thirtyDaysAgo = now()->subDays(30);
+            
+            // 构建销售查询
+            $salesQuery = \App\Models\Sale::where('created_at', '>=', $thirtyDaysAgo);
+            
+            // 构建库存查询  
+            $inventoryQuery = Inventory::whereHas('product', function($query) {
+                $query->where('type', 'standard');
+            });
+            
+            // 应用仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $salesQuery->where('store_id', $currentStoreId);
+                $inventoryQuery->where('store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $salesQuery->whereIn('store_id', $userStoreIds);
+                $inventoryQuery->whereIn('store_id', $userStoreIds);
+            }
+            
+            // 计算过去30天的销售成本
+            $totalSalesCost = $salesQuery->sum('total_cost') ?? 0;
+            
+            // 计算平均库存成本
+            $averageInventoryCost = $inventoryQuery->get()->sum(function($item) {
+                return $item->quantity * ($item->product->cost_price ?? 0);
+            });
+            
+            // 计算周转率（月周转率）
+            if ($averageInventoryCost > 0) {
+                $turnoverRate = ($totalSalesCost / $averageInventoryCost);
+                return round($turnoverRate, 1);
+            }
+            
+            return 0;
+        } catch (\Exception $e) {
+            \Log::error('库存周转率计算失败: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**

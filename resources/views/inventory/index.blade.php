@@ -54,8 +54,8 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-purple-100 text-sm font-medium"><x-lang key="messages.inventory.turnover_rate"/></p>
-                    <p class="text-4xl font-bold">2.3</p>
-                    <p class="text-purple-200 text-xs mt-1"><x-lang key="messages.inventory.times_per_month"/></p>
+                    <p class="text-4xl font-bold">{{ $turnoverRate }}</p>
+                    <p class="text-purple-200 text-xs mt-1">过去30天数据</p>
                 </div>
                 <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center">
                     <i class="bi bi-arrow-repeat text-3xl"></i>

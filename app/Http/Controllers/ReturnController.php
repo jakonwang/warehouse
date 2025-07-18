@@ -19,14 +19,50 @@ class ReturnController extends Controller
     {
         $storeId = request('store_id', session('current_store_id'));
         $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
+        
+        // 构建基础查询
         $query = ReturnRecord::with(['user', 'store', 'returnDetails.product'])
             ->whereIn('store_id', $userStoreIds);
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
-        $returns = $query->orderBy('created_at', 'desc')->paginate(10);
+        
+        // 获取分页数据
+        $records = $query->orderBy('created_at', 'desc')->paginate(10);
+        
+        // 计算统计数据
+        $statsQuery = ReturnRecord::whereIn('store_id', $userStoreIds);
+        if ($storeId) {
+            $statsQuery->where('store_id', $storeId);
+        }
+        
+        // 今日退货数量
+        $todayCount = (clone $statsQuery)->whereDate('created_at', today())->count();
+        
+        // 今日退货总金额
+        $totalAmount = (clone $statsQuery)->whereDate('created_at', today())->sum('total_amount') ?? 0;
+        
+        // 待处理数量（假设没有状态字段，暂时设为0）
+        $pendingCount = 0;
+        
+        // 计算退货率（基于本月数据）
+        $currentMonth = now()->startOfMonth();
+        $monthlyReturnAmount = (clone $statsQuery)->where('created_at', '>=', $currentMonth)->sum('total_amount') ?? 0;
+        
+        // 获取本月销售金额（同样的仓库权限范围）
+        $monthlySalesAmount = \App\Models\Sale::whereIn('store_id', $userStoreIds);
+        if ($storeId) {
+            $monthlySalesAmount->where('store_id', $storeId);
+        }
+        $monthlySalesAmount = $monthlySalesAmount->where('created_at', '>=', $currentMonth)->sum('total_amount') ?? 0;
+        
+        // 计算退货率：(退货金额 / 销售金额) * 100%
+        $returnRate = $monthlySalesAmount > 0 ? ($monthlyReturnAmount / $monthlySalesAmount) * 100 : 0;
+        $returnRate = round($returnRate, 1); // 保留1位小数
+        
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
-        return view('returns.index', compact('returns', 'stores'));
+        
+        return view('returns.index', compact('records', 'stores', 'todayCount', 'totalAmount', 'pendingCount', 'returnRate'));
     }
 
     /**
@@ -36,7 +72,8 @@ class ReturnController extends Controller
     {
         $products = Product::active()->where('type', 'standard')->get();
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
-        return view('returns.create', compact('products', 'stores'));
+        $storeId = request('store_id', session('current_store_id'));
+        return view('returns.create', compact('products', 'stores', 'storeId'));
     }
 
     /**

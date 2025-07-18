@@ -63,7 +63,8 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-purple-100 text-sm"><x-lang key="messages.returns.return_rate"/></p>
-                    <p class="text-2xl font-bold">2.3%</p>
+                    <p class="text-2xl font-bold">{{ $returnRate }}%</p>
+                    <p class="text-purple-200 text-xs">本月数据</p>
                 </div>
             </div>
         </div>
