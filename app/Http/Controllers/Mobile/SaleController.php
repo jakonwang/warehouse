@@ -270,6 +270,149 @@ class SaleController extends Controller
     }
 
     /**
+     * 显示编辑销售记录表单
+     */
+    public function edit(Sale $sale)
+    {
+        $user = auth()->user();
+        $stores = $user->stores()->where('is_active', true)->get();
+        
+        // 获取标准商品（非盲袋）
+        $standardProducts = Product::where('type', 'standard')
+            ->where('is_active', true)
+            ->get();
+            
+        // 获取盲袋商品
+        $blindBagProducts = Product::where('type', 'blind_bag')
+            ->where('is_active', true)
+            ->get();
+
+        $sale->load(['saleDetails.product', 'blindBagDeliveries.deliveryProduct']);
+        
+        return view('mobile.sales.edit', compact('sale', 'stores', 'standardProducts', 'blindBagProducts'));
+    }
+
+    /**
+     * 更新销售记录
+     */
+    public function update(Request $request, Sale $sale)
+    {
+        // 根据销售类型验证不同的字段
+        if ($sale->sale_type === Sale::SALE_TYPE_STANDARD) {
+            $request->validate([
+                'customer_name' => 'nullable|string|max:255',
+                'customer_phone' => 'nullable|string|max:20',
+                'remark' => 'nullable|string',
+                'image' => 'nullable|image|max:2048',
+                'standard_products' => 'required|array',
+                'standard_products.*.id' => 'required|exists:products,id',
+                'standard_products.*.quantity' => 'nullable|integer|min:0',
+            ]);
+        } else {
+            $request->validate([
+                'customer_name' => 'nullable|string|max:255',
+                'customer_phone' => 'nullable|string|max:20',
+                'remark' => 'nullable|string',
+                'image' => 'nullable|image|max:2048',
+                'blind_bag_delivery' => 'required|array',
+                'blind_bag_delivery.*.product_id' => 'required|exists:products,id',
+                'blind_bag_delivery.*.quantity' => 'nullable|integer|min:0',
+            ]);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 更新基本信息
+            $sale->customer_name = $request->customer_name;
+            $sale->customer_phone = $request->customer_phone;
+            $sale->remark = $request->remark;
+
+            // 处理图片上传
+            if ($request->hasFile('image')) {
+                if ($sale->image_path) {
+                    Storage::disk('public')->delete($sale->image_path);
+                }
+                $sale->image_path = $request->file('image')->store('sales', 'public');
+            }
+
+            $sale->save();
+
+            $totalAmount = $sale->total_amount; // 保持原销售金额
+            $totalCost = 0;
+
+            if ($sale->sale_type === Sale::SALE_TYPE_STANDARD) {
+                // 标品销售：更新销售明细
+                $sale->saleDetails()->delete();
+
+                // 预处理：只保留填写了数量且大于0的商品
+                $products = collect($request->input('standard_products', []))->filter(function($item) {
+                    return isset($item['quantity']) && $item['quantity'] > 0;
+                })->values()->all();
+
+                $totalAmount = 0; // 标品销售需要重新计算销售金额
+
+                foreach ($products as $item) {
+                    $product = Product::find($item['id']);
+                    $detail = new SaleDetail();
+                    $detail->sale_id = $sale->id;
+                    $detail->product_id = $item['id'];
+                    $detail->quantity = $item['quantity'];
+                    $detail->price = $product->price;
+                    $detail->cost = $product->cost_price;
+                    $detail->cost_price = $product->cost_price;
+                    $detail->total = $item['quantity'] * $product->price;
+                    $detail->profit = $item['quantity'] * ($product->price - $product->cost_price);
+                    $detail->save();
+
+                    $totalAmount += $detail->total;
+                    $totalCost += $detail->quantity * $detail->cost_price;
+                }
+            } else {
+                // 盲袋销售：只更新发货明细，保持销售金额不变
+                $sale->blindBagDeliveries()->delete();
+
+                // 预处理：只保留填写了数量且大于0的发货商品
+                $deliveries = collect($request->input('blind_bag_delivery', []))->filter(function($item) {
+                    return isset($item['quantity']) && $item['quantity'] > 0;
+                })->values()->all();
+
+                foreach ($deliveries as $item) {
+                    $product = Product::find($item['product_id']);
+                    $delivery = new \App\Models\BlindBagDelivery();
+                    $delivery->sale_id = $sale->id;
+                    $delivery->blind_bag_product_id = $sale->saleDetails->first()->product_id ?? null; // 取第一个盲袋商品ID
+                    $delivery->delivery_product_id = $item['product_id'];
+                    $delivery->quantity = $item['quantity'];
+                    $delivery->unit_cost = $product->cost_price;
+                    $delivery->total_cost = $item['quantity'] * $product->cost_price;
+                    $delivery->save();
+
+                    $totalCost += $delivery->total_cost;
+                }
+            }
+
+            // 更新销售统计
+            $sale->total_amount = $totalAmount;
+            $sale->total_cost = $totalCost;
+            $sale->total_profit = $totalAmount - $totalCost;
+            // 修正利润率精度和范围
+            $profitRate = $totalAmount > 0 ? (($sale->total_profit / $totalAmount) * 100) : 0;
+            $profitRate = max(min(round($profitRate, 2), 999.99), -999.99);
+            $sale->profit_rate = $profitRate;
+            $sale->save();
+
+            DB::commit();
+
+            return redirect()->route('mobile.sales.show', $sale)
+                ->with('success', '销售记录更新成功！');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', '销售记录更新失败：' . $e->getMessage());
+        }
+    }
+
+    /**
      * 删除销售记录
      */
     public function destroy(Sale $sale)

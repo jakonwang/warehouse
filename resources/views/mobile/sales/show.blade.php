@@ -166,15 +166,23 @@
 
     <!-- 操作按钮 -->
     <div class="card p-6">
-        <div class="flex space-x-3">
-            <a href="{{ route('mobile.sales.index') }}" 
-               class="flex-1 btn-secondary py-3 text-center rounded-lg">
-                <i class="bi bi-arrow-left mr-2"></i>
-                {{ __('mobile.common.back_to_list') }}
-            </a>
+        <div class="grid grid-cols-1 gap-3">
+            <div class="flex space-x-3">
+                <a href="{{ route('mobile.sales.index') }}" 
+                   class="flex-1 btn-secondary py-3 text-center rounded-lg">
+                    <i class="bi bi-arrow-left mr-2"></i>
+                    {{ __('mobile.common.back_to_list') }}
+                </a>
+                
+                <a href="{{ route('mobile.sales.edit', $sale) }}" 
+                   class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 text-center rounded-lg font-medium">
+                    <i class="bi bi-pencil mr-2"></i>
+                    编辑记录
+                </a>
+            </div>
             
             @if(auth()->user()->isAdmin() || auth()->id() == $sale->user_id)
-            <form action="{{ route('mobile.sales.destroy', $sale->id) }}" method="POST" class="flex-1" 
+            <form action="{{ route('mobile.sales.destroy', $sale->id) }}" method="POST" 
                   onsubmit="return confirm('{{ __('mobile.sales.confirm_delete') }}')">
                 @csrf
                 @method('DELETE')

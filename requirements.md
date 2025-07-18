@@ -1364,3 +1364,284 @@ class Inventory extends Model {
 - **技术价值**：现代化技术架构，易于维护和扩展
 - **用户体验**：直观易用的界面，多端适配
 - **数据价值**：丰富的数据分析，支持决策制定
+
+---
+
+## 15. 最新开发记录
+
+### 15.1 销售记录编辑功能修复 (2025-01-13)
+
+#### 15.1.1 问题描述
+- `/sales/1/edit` 编辑销售记录的页面功能不完善
+- 编辑页面只支持价格系列，不支持标品和盲袋商品编辑
+- 查看销售记录时图片显示路径不一致导致图片无法显示
+
+#### 15.1.2 解决方案
+
+**1. 重新设计销售编辑页面** (`resources/views/sales/edit.blade.php`)
+- 支持标品和盲袋两种销售模式的编辑
+- 根据销售类型显示相应的编辑界面
+- 添加实时统计计算功能
+- 使用 Alpine.js 实现前端交互逻辑
+- 统一现代化设计风格
+
+**2. 更新销售控制器逻辑** (`app/Http/Controllers/SaleController.php`)
+- `edit()` 方法：加载必要的商品数据和销售明细
+- `update()` 方法：根据销售类型处理不同的更新逻辑
+  - 标品销售：重新计算销售金额和成本
+  - 盲袋销售：只更新发货明细，保持销售金额不变
+- 添加完善的数据验证和错误处理
+
+**3. 修复图片显示问题**
+- 统一图片路径格式：使用 `asset('storage/' . $path)` 替代 `Storage::url($path)`
+- 修复文件：
+  - `resources/views/sales/show.blade.php`
+  - `resources/views/returns/show.blade.php` 
+  - `resources/views/stock-in/show.blade.php`
+  - `resources/views/stock-out/show.blade.php`
+
+#### 15.1.3 技术实现要点
+
+**前端交互逻辑**
+```javascript
+// Alpine.js 数据绑定
+x-data="{
+    saleType: @js($sale->sale_type),
+    products: @js($products),
+    selectedProducts: {},
+    blindBagDelivery: {},
+    
+    // 实时计算功能
+    get standardTotalAmount() { ... },
+    get blindBagTotalCost() { ... },
+    
+    // 数据更新方法
+    updateStandardQuantity(productId, quantity) { ... },
+    updateBlindBagDelivery(productId, quantity) { ... }
+}"
+```
+
+**后端验证逻辑**
+```php
+// 根据销售类型验证不同字段
+if ($sale->sale_type === Sale::SALE_TYPE_STANDARD) {
+    $request->validate([
+        'products' => 'required|array',
+        'products.*.quantity' => 'nullable|integer|min:0',
+    ]);
+} else {
+    $request->validate([
+        'blind_bag_delivery' => 'required|array',
+        'blind_bag_delivery.*.quantity' => 'nullable|integer|min:0',
+    ]);
+}
+```
+
+#### 15.1.4 功能特性
+
+**编辑界面优化**
+- ✅ 销售模式显示（不可更改）
+- ✅ 根据销售类型显示对应的商品编辑界面
+- ✅ 实时统计计算和显示
+- ✅ 客户信息和销售凭证编辑
+- ✅ 权限控制（成本利润信息）
+
+**数据处理逻辑**
+- ✅ 标品销售：支持修改商品数量，自动重新计算总额
+- ✅ 盲袋销售：支持修改发货内容，保持销售金额不变
+- ✅ 图片上传和显示功能完善
+- ✅ 完整的事务处理和错误回滚
+
+**用户体验提升**
+- ✅ 现代化界面设计，与创建页面风格一致
+- ✅ 清晰的编辑说明和操作提示
+- ✅ 实时数据反馈和计算结果显示
+- ✅ 响应式设计，支持移动端访问
+
+#### 15.1.5 修改文件清单
+
+**后端文件**
+- `app/Http/Controllers/SaleController.php` - 控制器逻辑更新
+- `app/Models/Sale.php` - 确认模型关系和属性
+
+**前端文件**
+- `resources/views/sales/edit.blade.php` - 完全重写编辑页面
+- `resources/views/sales/show.blade.php` - 修复图片显示
+- `resources/views/returns/show.blade.php` - 修复图片显示
+- `resources/views/stock-in/show.blade.php` - 修复图片显示  
+- `resources/views/stock-out/show.blade.php` - 修复图片显示
+
+#### 15.1.6 测试验证
+
+**功能测试**
+- ✅ 标品销售记录编辑：数量修改、金额重新计算
+- ✅ 盲袋销售记录编辑：发货内容修改、利润重新计算
+- ✅ 客户信息更新：姓名、电话、备注
+- ✅ 销售凭证上传：图片替换和显示
+- ✅ 权限控制：成本利润信息的显示/隐藏
+
+**界面测试**
+- ✅ 响应式设计在不同设备上的表现
+- ✅ Alpine.js 交互功能正常工作
+- ✅ 实时统计计算准确无误
+- ✅ 图片显示路径修复生效
+
+#### 15.1.7 后续建议
+
+**功能增强**
+- 考虑添加批量编辑功能
+- 增加编辑历史记录追踪
+- 添加更详细的操作日志
+
+**性能优化**
+- 对于大量商品的情况，考虑分页加载
+- 优化前端计算逻辑的性能
+
+**用户体验**
+- 添加更多的操作引导和帮助信息
+- 考虑添加快捷键支持
+
+---
+
+**开发完成时间**: 2025年1月13日  
+**开发人员**: AI Assistant  
+**版本**: v2.5.1
+
+### 15.2 移动端销售编辑功能添加 (2025-01-13)
+
+#### 15.2.1 问题描述
+- 移动端销售功能缺少编辑功能
+- 用户在移动端只能查看和删除销售记录，无法修改
+- 需要为移动端添加完整的销售记录编辑功能
+
+#### 15.2.2 解决方案
+
+**1. 添加移动端路由** (`routes/web.php`)
+- 添加 `mobile.sales.edit` 路由：`GET /mobile/sales/{sale}/edit`
+- 添加 `mobile.sales.update` 路由：`PUT /mobile/sales/{sale}`
+
+**2. 扩展移动端销售控制器** (`app/Http/Controllers/Mobile/SaleController.php`)
+- 添加 `edit()` 方法：显示编辑表单，加载商品数据和销售明细
+- 添加 `update()` 方法：处理表单提交，根据销售类型进行不同的更新逻辑
+- 复用PC端的业务逻辑，确保数据一致性
+
+**3. 创建移动端编辑视图** (`resources/views/mobile/sales/edit.blade.php`)
+- 移动端优化的编辑界面设计
+- 支持标品和盲袋两种销售模式编辑
+- 使用触屏友好的数量调节按钮（+/-按钮）
+- 实时统计计算和显示
+- 响应式设计，适配各种移动设备
+
+**4. 更新销售详情页面** (`resources/views/mobile/sales/show.blade.php`)
+- 在操作按钮区域添加"编辑记录"按钮
+- 重新布局操作按钮，提升用户体验
+
+#### 15.2.3 技术实现要点
+
+**移动端优化设计**
+```html
+<!-- 触屏友好的数量调节 -->
+<div class="flex items-center justify-center space-x-3">
+    <button type="button" @click="decreaseQuantity('product_{{ $product->id }}')">
+        <i class="bi bi-dash"></i>
+    </button>
+    <input type="number" x-model="quantities.product_{{ $product->id }}">
+    <button type="button" @click="increaseQuantity('product_{{ $product->id }}')">
+        <i class="bi bi-plus"></i>
+    </button>
+</div>
+```
+
+**Alpine.js 交互逻辑**
+```javascript
+function editSaleForm() {
+    return {
+        quantities: {},
+        
+        // 初始化数量值
+        init() { ... },
+        
+        // 数量调节方法
+        increaseQuantity(key) { ... },
+        decreaseQuantity(key) { ... },
+        
+        // 实时计算
+        get totalAmount() { ... },
+        get totalCost() { ... }
+    };
+}
+```
+
+**业务逻辑一致性**
+- 标品销售：重新计算销售金额和成本
+- 盲袋销售：保持销售金额不变，只更新发货明细和成本
+- 完整的数据验证和错误处理
+- 事务处理确保数据一致性
+
+#### 15.2.4 功能特性
+
+**移动端优化**
+- ✅ 触屏友好的界面设计
+- ✅ 大按钮和易点击的操作区域
+- ✅ 卡片式布局，适合移动设备
+- ✅ 响应式设计，兼容各种屏幕尺寸
+
+**编辑功能**
+- ✅ 销售模式识别和对应编辑界面
+- ✅ 商品数量的增减调节
+- ✅ 客户信息和备注编辑
+- ✅ 销售凭证图片更换（支持相机拍摄）
+- ✅ 实时统计计算和显示
+
+**用户体验**
+- ✅ 直观的操作流程
+- ✅ 实时反馈和数据计算
+- ✅ 错误提示和成功确认
+- ✅ 便捷的返回和取消操作
+
+#### 15.2.5 修改文件清单
+
+**路由文件**
+- `routes/web.php` - 添加移动端编辑路由
+
+**控制器文件**
+- `app/Http/Controllers/Mobile/SaleController.php` - 添加edit和update方法
+
+**视图文件**
+- `resources/views/mobile/sales/edit.blade.php` - 新建移动端编辑页面
+- `resources/views/mobile/sales/show.blade.php` - 添加编辑按钮
+
+#### 15.2.6 测试验证
+
+**功能测试**
+- ✅ 移动端销售记录编辑入口
+- ✅ 标品销售数量修改和金额计算
+- ✅ 盲袋销售发货内容修改和成本计算
+- ✅ 客户信息和备注更新
+- ✅ 销售凭证图片更换
+- ✅ 表单验证和错误处理
+
+**移动端体验**
+- ✅ 触屏操作响应流畅
+- ✅ 按钮大小适合手指点击
+- ✅ 界面在不同设备上显示正常
+- ✅ 相机拍摄功能正常工作
+
+#### 15.2.7 功能对比
+
+| 功能 | PC端 | 移动端 |
+|------|------|--------|
+| 编辑入口 | ✅ 列表页编辑按钮 | ✅ 详情页编辑按钮 |
+| 销售模式支持 | ✅ 标品/盲袋 | ✅ 标品/盲袋 |
+| 数量调节 | ✅ 输入框 | ✅ +/- 按钮 |
+| 实时计算 | ✅ Alpine.js | ✅ Alpine.js |
+| 图片上传 | ✅ 文件选择 | ✅ 文件选择+相机 |
+| 界面风格 | 现代化桌面端 | 移动端卡片式 |
+
+现在移动端销售功能已经与PC端功能对等，用户可以在移动设备上完成完整的销售记录管理操作。
+
+---
+
+**开发完成时间**: 2025年1月13日  
+**开发人员**: AI Assistant  
+**版本**: v2.5.2

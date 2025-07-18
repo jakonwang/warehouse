@@ -65,10 +65,10 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">退货凭证</h3>
         <div class="flex items-center space-x-4">
-            <img src="{{ Storage::url($returnRecord->image_path) }}" alt="退货凭证" class="w-32 h-32 object-cover rounded-lg border border-gray-200">
+            <img src="{{ asset('storage/' . $returnRecord->image_path) }}" alt="退货凭证" class="w-32 h-32 object-cover rounded-lg border border-gray-200">
             <div>
                 <p class="text-sm text-gray-600">上传时间：{{ date('Y-m-d H:i:s', strtotime($returnRecord->created_at)) }}</p>
-                <a href="{{ Storage::url($returnRecord->image_path) }}" target="_blank" class="inline-flex items-center mt-2 text-sm text-blue-600 hover:text-blue-800">
+                <a href="{{ asset('storage/' . $returnRecord->image_path) }}" target="_blank" class="inline-flex items-center mt-2 text-sm text-blue-600 hover:text-blue-800">
                     <i class="bi bi-eye mr-1"></i>
                     查看原图
                 </a>

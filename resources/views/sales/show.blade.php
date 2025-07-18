@@ -246,7 +246,7 @@
                     <div class="mb-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">销售凭证</h3>
                     </div>
-                    <img src="{{ Storage::url($sale->image_path) }}" alt="销售凭证" class="w-full max-h-96 object-contain rounded-lg">
+                    <img src="{{ asset('storage/' . $sale->image_path) }}" alt="销售凭证" class="w-full max-h-96 object-contain rounded-lg">
                 </div>
                 @endif
             </div>
