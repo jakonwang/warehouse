@@ -43,7 +43,7 @@ class StockOutController extends Controller
         // 如果有选中的仓库，获取该仓库的商品
         $products = collect();
         if ($currentStoreId) {
-            $currentStore = $stores->where('id', $currentStoreId)->first();
+            $currentStore = $stores->firstWhere('id', $currentStoreId);
             if ($currentStore) {
                 $products = $currentStore->availableStandardProducts();
             }

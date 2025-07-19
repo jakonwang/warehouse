@@ -185,7 +185,7 @@ class User extends Authenticatable
             return \App\Models\Store::all();
         }
         // 其他角色只返回分配的仓库
-        return $this->stores;
+        return $this->stores()->get();
     }
 
     /**
