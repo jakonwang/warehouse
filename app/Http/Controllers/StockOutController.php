@@ -188,7 +188,7 @@ class StockOutController extends Controller
         }
         
         // 获取该仓库分配的标准商品
-        $products = $store->availableStandardProducts();
+        $products = $store->availableStandardProducts()->get();
         
         return response()->json([
             'products' => $products->map(function($product) {
