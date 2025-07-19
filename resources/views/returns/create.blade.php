@@ -116,8 +116,29 @@
                                 <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">点击上传</span> 或拖拽文件</p>
                                 <p class="text-xs text-gray-500">PNG, JPG, PDF (最大 2MB)</p>
                             </div>
-                            <input type="file" name="image" class="hidden" accept="image/*,.pdf">
+                            <input type="file" name="image" class="hidden" accept="image/*,.pdf" id="returnImage">
                         </label>
+                    </div>
+                    
+                    <!-- 文件预览 -->
+                    <div id="file-preview" class="mt-4 hidden">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="bi bi-file-earmark text-gray-400 text-2xl"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900" id="file-name"></p>
+                                        <p class="text-xs text-gray-500" id="file-info"></p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="removeFile()" class="text-red-500 hover:text-red-700">
+                                    <i class="bi bi-x-circle text-xl"></i>
+                                </button>
+                            </div>
+                            <div id="image-preview" class="mt-3 hidden">
+                                <img src="" alt="预览图" class="max-h-32 rounded border">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -360,6 +381,44 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 });
+
+// 文件上传预览功能
+document.getElementById('returnImage').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const file = this.files[0];
+        const preview = document.getElementById('file-preview');
+        const fileName = document.getElementById('file-name');
+        const fileInfo = document.getElementById('file-info');
+        const imagePreview = document.getElementById('image-preview');
+        
+        // 显示文件信息
+        fileName.textContent = file.name;
+        fileInfo.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB - ${file.type}`;
+        preview.classList.remove('hidden');
+        
+        // 如果是图片，显示预览
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.querySelector('img').src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.classList.add('hidden');
+        }
+    }
+});
+
+function removeFile() {
+    const input = document.getElementById('returnImage');
+    const preview = document.getElementById('file-preview');
+    const imagePreview = document.getElementById('image-preview');
+    
+    input.value = '';
+    preview.classList.add('hidden');
+    imagePreview.classList.add('hidden');
+}
 </script>
 @endpush
 @endsection 

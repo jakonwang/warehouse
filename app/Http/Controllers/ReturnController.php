@@ -85,7 +85,7 @@ class ReturnController extends Controller
             'store_id' => 'required|exists:stores,id',
             'customer' => 'nullable|string|max:255',
             'remark' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:2048',
             'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:0',
@@ -108,9 +108,24 @@ class ReturnController extends Controller
 
             if ($request->hasFile('image')) {
                 $file = $request->file('image');
-                $extension = $file->getClientOriginalExtension();
-                $filename = 'return_' . time() . '_' . uniqid() . '.' . $extension;
-                $record->image_path = $file->storeAs('returns', $filename, 'public_direct');
+                if ($file->isValid()) {
+                    try {
+                        $record->image_path = $file->store('returns', 'public');
+                    } catch (\Exception $e) {
+                        \Log::error('后台退货图片上传失败', [
+                            'error' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine()
+                        ]);
+                        throw new \Exception('图片上传失败：' . $e->getMessage());
+                    }
+                } else {
+                    \Log::error('后台退货文件验证失败', [
+                        'error_code' => $file->getError(),
+                        'error_message' => $file->getErrorMessage()
+                    ]);
+                    throw new \Exception('文件验证失败：' . $file->getErrorMessage());
+                }
             }
 
             $record->save();
@@ -446,6 +461,9 @@ class ReturnController extends Controller
             $returnRecord->remark = $request->remark;
             $returnRecord->user_id = auth()->id();
             if ($request->hasFile('image')) {
+                if ($returnRecord->image_path) {
+                    Storage::disk('public')->delete($returnRecord->image_path);
+                }
                 $returnRecord->image_path = $request->file('image')->store('returns', 'public');
             }
             $returnRecord->save();

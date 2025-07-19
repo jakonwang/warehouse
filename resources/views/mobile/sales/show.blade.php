@@ -67,14 +67,22 @@
             @if($sale->image_path)
             <div class="mt-4">
                 <span class="text-sm text-gray-600 block mb-2">{{ __('mobile.sales.sale_proof') }}</span>
-                <img src="{{ asset('uploads/' . $sale->image_path) }}" 
+                <img src="{{ asset('storage/' . $sale->image_path) }}" 
                      alt="{{ __('mobile.sales.sale_proof') }}" 
                      class="w-full max-w-xs rounded-lg border border-gray-200"
-                     onerror="this.style.display='none'">
+                     onerror="this.onerror=null; this.src=''; this.classList.add('hidden'); console.log('图片加载失败：' + this.src);">
                 <div class="mt-2">
-                    <a href="{{ asset('uploads/' . $sale->image_path) }}" target="_blank" class="text-blue-600 text-sm">
+                    <a href="{{ asset('storage/' . $sale->image_path) }}" target="_blank" class="text-blue-600 text-sm">
                         <i class="bi bi-arrows-fullscreen mr-1"></i>查看原图
                     </a>
+                    <!-- 调试信息 -->
+                    @if(config('app.debug'))
+                    <div class="mt-2 text-xs text-gray-500">
+                        <p>图片路径: {{ $sale->image_path }}</p>
+                        <p>完整URL: {{ asset('storage/' . $sale->image_path) }}</p>
+                        <p>物理路径: {{ public_path('storage/' . $sale->image_path) }}</p>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endif

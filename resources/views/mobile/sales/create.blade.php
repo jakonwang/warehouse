@@ -26,7 +26,7 @@
         </div>
     @endif
 
-    <form action="{{ route('mobile.sales.store') }}" method="POST" class="space-y-6" x-data="saleForm()">
+    <form action="{{ route('mobile.sales.store') }}" method="POST" class="space-y-6" x-data="saleForm()" enctype="multipart/form-data">
         @csrf
 
         <!-- 仓库选择 -->
@@ -55,18 +55,81 @@
                     <input type="tel" name="customer_phone" class="form-input w-full px-3 py-2 rounded-lg border" placeholder="<x-lang key="mobile.sales.customer_phone_placeholder"/>">
                 </div>
                 <div>
-                    <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.sales.sales_certificate"/></label>
-                    <input type="file" name="image" accept="image/*" class="form-input w-full px-3 py-2 rounded-lg border">
-                    <div class="flex space-x-2 mt-2">
-                        <button type="button" onclick="document.querySelector('input[name=image]').click()" class="flex-1 text-center py-2 bg-blue-100 text-blue-700 rounded-lg">
-                            <i class="bi bi-images mr-1"></i>从相册选择
+                    <label class="form-label block text-sm font-medium mb-2">📷 <x-lang key="mobile.sales.sales_certificate"/></label>
+                    
+                    <!-- 隐藏的文件输入框 -->
+                    <input type="file" name="image" accept="image/*" class="hidden" id="imageInput">
+                    
+                    <!-- 上传选项按钮 -->
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <button type="button" onclick="selectFromGallery()" class="flex flex-col items-center justify-center py-4 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 transition-all duration-200 transform hover:scale-105">
+                            <i class="bi bi-image text-2xl mb-1"></i>
+                            <span class="text-sm font-medium">选择相册</span>
                         </button>
-                        <button type="button" onclick="document.querySelector('input[name=image]').setAttribute('capture', 'environment'); document.querySelector('input[name=image]').click()" class="flex-1 text-center py-2 bg-green-100 text-green-700 rounded-lg">
-                            <i class="bi bi-camera mr-1"></i>拍照上传
+                        <button type="button" onclick="takePhoto()" class="flex flex-col items-center justify-center py-4 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 transition-all duration-200 transform hover:scale-105">
+                            <i class="bi bi-camera text-2xl mb-1"></i>
+                            <span class="text-sm font-medium">拍照</span>
                         </button>
                     </div>
-                    <p class="mt-1 text-xs text-gray-500"><x-lang key="mobile.sales.certificate_desc"/></p>
+                    
+                    <!-- 图片预览 -->
+                    <div id="image-preview" class="mt-2 hidden">
+                        <div class="relative inline-block">
+                            <img src="" alt="预览图" class="max-w-full h-48 rounded-lg border border-gray-200 object-cover shadow-md">
+                            <button type="button" onclick="removeImage()" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors duration-200 shadow-lg">
+                                ×
+                            </button>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-600 bg-gray-50 rounded p-2" id="image-info"></div>
+                    </div>
+                    
+                    <p class="mt-1 text-xs text-gray-500">💡 <x-lang key="mobile.sales.certificate_desc"/></p>
                 </div>
+
+                <script>
+                    function selectFromGallery() {
+                        const input = document.getElementById('imageInput');
+                        input.removeAttribute('capture');
+                        input.click();
+                    }
+                    
+                    function takePhoto() {
+                        const input = document.getElementById('imageInput');
+                        input.setAttribute('capture', 'environment');
+                        input.click();
+                    }
+                    
+                    function removeImage() {
+                        const input = document.getElementById('imageInput');
+                        const preview = document.getElementById('image-preview');
+                        const info = document.getElementById('image-info');
+                        
+                        input.value = '';
+                        preview.classList.add('hidden');
+                        info.innerHTML = '';
+                    }
+                    
+                    document.getElementById('imageInput').addEventListener('change', function(e) {
+                        if (this.files && this.files[0]) {
+                            const file = this.files[0];
+                            const reader = new FileReader();
+                            
+                            reader.onload = function(e) {
+                                const preview = document.getElementById('image-preview');
+                                const info = document.getElementById('image-info');
+                                
+                                preview.querySelector('img').src = e.target.result;
+                                preview.classList.remove('hidden');
+                                
+                                // 显示文件信息
+                                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                                info.innerHTML = `文件名: ${file.name}<br>大小: ${fileSize} MB<br>类型: ${file.type}`;
+                            }
+                            
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                </script>
             </div>
         </div>
 

@@ -287,7 +287,7 @@ Route::middleware(['auth'])->prefix('mobile')->name('mobile.')->group(function (
     // 销售记录
     Route::get('/sales', [SaleController::class, 'mobileIndex'])->name('sales.index');
     Route::get('/sales/create', [SaleController::class, 'mobileCreate'])->name('sales.create');
-    Route::post('/sales', [SaleController::class, 'mobileStore'])->name('sales.store');
+    Route::post('/sales', [\App\Http\Controllers\Mobile\SaleController::class, 'store'])->name('sales.store');
     Route::get('/sales/{sale}', [\App\Http\Controllers\Mobile\SaleController::class, 'show'])->name('sales.show');
     Route::get('/sales/{sale}/edit', [\App\Http\Controllers\Mobile\SaleController::class, 'edit'])->name('sales.edit');
     Route::put('/sales/{sale}', [\App\Http\Controllers\Mobile\SaleController::class, 'update'])->name('sales.update');

@@ -135,24 +135,69 @@ class SaleController extends Controller
     {
         $request->validate([
             'store_id' => 'required|exists:stores,id',
+            'sales_mode' => 'required|in:standard,blind_bag',
             'customer_name' => 'nullable|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
-            'sales_mode' => 'required|in:standard,blind_bag',
-            'standard_products' => 'array',
-            'standard_products.*.id' => 'required|exists:products,id',
-            'standard_products.*.quantity' => 'required|integer|min:1',
-            'blind_bag_products' => 'array',
-            'blind_bag_products.*.id' => 'required|exists:products,id',
-            'blind_bag_products.*.quantity' => 'required|integer|min:1',
-            'blind_bag_delivery' => 'array',
-            'blind_bag_delivery.*.product_id' => 'required|exists:products,id',
-            'blind_bag_delivery.*.quantity' => 'required|integer|min:0',
+            'remark' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'standard_products' => 'required_if:sales_mode,standard|array',
+            'standard_products.*.id' => 'required_if:sales_mode,standard|exists:products,id',
+            'standard_products.*.quantity' => 'nullable|integer|min:0',
+            'blind_bag_products' => 'required_if:sales_mode,blind_bag|array',
+            'blind_bag_products.*.id' => 'required_if:sales_mode,blind_bag|exists:products,id',
+            'blind_bag_products.*.quantity' => 'nullable|integer|min:0',
+            'blind_bag_delivery' => 'required_if:sales_mode,blind_bag|array',
+            'blind_bag_delivery.*.product_id' => 'required_if:sales_mode,blind_bag|exists:products,id',
+            'blind_bag_delivery.*.quantity' => 'nullable|integer|min:0',
         ]);
 
         // 校验用户是否有权限操作该仓库
         if (!auth()->user()->canAccessStore($request->store_id)) {
             return back()->withErrors(['store_id' => '无权限操作该仓库'])->withInput();
+        }
+
+        // 检查是否至少选择了一个商品
+        if ($request->sales_mode === 'standard') {
+            $hasProducts = false;
+            if ($request->has('standard_products')) {
+                foreach ($request->standard_products as $product) {
+                    if (isset($product['quantity']) && $product['quantity'] > 0) {
+                        $hasProducts = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasProducts) {
+                return back()->withErrors(['standard_products' => '请至少选择一个商品'])->withInput();
+            }
+        } elseif ($request->sales_mode === 'blind_bag') {
+            $hasBlindBag = false;
+            $hasDelivery = false;
+            
+            if ($request->has('blind_bag_products')) {
+                foreach ($request->blind_bag_products as $product) {
+                    if (isset($product['quantity']) && $product['quantity'] > 0) {
+                        $hasBlindBag = true;
+                        break;
+                    }
+                }
+            }
+            
+            if ($request->has('blind_bag_delivery')) {
+                foreach ($request->blind_bag_delivery as $delivery) {
+                    if (isset($delivery['quantity']) && $delivery['quantity'] > 0) {
+                        $hasDelivery = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$hasBlindBag) {
+                return back()->withErrors(['blind_bag_products' => '请至少选择一个盲袋商品'])->withInput();
+            }
+            if (!$hasDelivery) {
+                return back()->withErrors(['blind_bag_delivery' => '请至少选择一个发货商品'])->withInput();
+            }
         }
 
         try {
@@ -162,9 +207,25 @@ class SaleController extends Controller
             $imagePath = null;
             if ($request->hasFile('image')) {
                 $file = $request->file('image');
-                $extension = $file->getClientOriginalExtension();
-                $filename = 'sale_' . time() . '_' . uniqid() . '.' . $extension;
-                $imagePath = $file->storeAs('sales', $filename, 'public_direct');
+                if ($file->isValid()) {
+                    try {
+                        $imagePath = $file->store('sales', 'public');
+                        
+                    } catch (\Exception $e) {
+                        \Log::error('图片上传失败', [
+                            'error' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine()
+                        ]);
+                        throw $e;
+                    }
+                } else {
+                    \Log::error('文件验证失败', [
+                        'error_code' => $file->getError(),
+                        'error_message' => $file->getErrorMessage()
+                    ]);
+                    throw new \Exception('文件验证失败：' . $file->getErrorMessage());
+                }
             }
 
             $sale = new Sale();
@@ -182,6 +243,11 @@ class SaleController extends Controller
             if ($request->sales_mode === 'standard') {
                 // 标品销售模式
                 foreach ($request->standard_products as $item) {
+                    // 跳过数量为0或空的商品
+                    if (!isset($item['quantity']) || $item['quantity'] <= 0) {
+                        continue;
+                    }
+                    
                     $product = Product::find($item['id']);
                     $detail = new SaleDetail();
                     $detail->sale_id = $sale->id;
@@ -195,7 +261,7 @@ class SaleController extends Controller
                     $detail->save();
 
                     $totalAmount += $detail->total;
-                    $totalCost += $detail->total_cost;
+                    $totalCost += $detail->cost_price * $detail->quantity;
 
                     // 扣减库存
                     $product->reduceStock($item['quantity'], $request->store_id);
@@ -203,6 +269,11 @@ class SaleController extends Controller
             } else {
                 // 盲袋销售模式
                 foreach ($request->blind_bag_products as $item) {
+                    // 跳过数量为0或空的商品
+                    if (!isset($item['quantity']) || $item['quantity'] <= 0) {
+                        continue;
+                    }
+                    
                     $blindBagProduct = Product::find($item['id']);
                     $detail = new SaleDetail();
                     $detail->sale_id = $sale->id;
@@ -220,22 +291,35 @@ class SaleController extends Controller
 
                 // 保存盲袋发货明细
                 foreach ($request->blind_bag_delivery as $delivery) {
-                    if ($delivery['quantity'] > 0) {
-                        $deliveryProduct = Product::find($delivery['product_id']);
-                        $blindBagDeliveryModel = new BlindBagDelivery();
-                        $blindBagDeliveryModel->sale_id = $sale->id;
-                        $blindBagDeliveryModel->blind_bag_product_id = $request->blind_bag_products[0]['id']; // 取第一个盲袋商品ID
-                        $blindBagDeliveryModel->delivery_product_id = $delivery['product_id'];
-                        $blindBagDeliveryModel->quantity = $delivery['quantity'];
-                        $blindBagDeliveryModel->unit_cost = $deliveryProduct->cost_price;
-                        $blindBagDeliveryModel->total_cost = $delivery['quantity'] * $deliveryProduct->cost_price;
-                        $blindBagDeliveryModel->save();
-
-                        $totalCost += $blindBagDeliveryModel->total_cost;
-
-                        // 扣减发货商品库存
-                        $deliveryProduct->reduceStock($delivery['quantity'], $request->store_id);
+                    // 跳过数量为0或空的商品
+                    if (!isset($delivery['quantity']) || $delivery['quantity'] <= 0) {
+                        continue;
                     }
+                    
+                    $deliveryProduct = Product::find($delivery['product_id']);
+                    $blindBagDeliveryModel = new BlindBagDelivery();
+                    $blindBagDeliveryModel->sale_id = $sale->id;
+                    
+                    // 找到第一个有效的盲袋商品ID
+                    $blindBagProductId = null;
+                    foreach ($request->blind_bag_products as $bgProduct) {
+                        if (isset($bgProduct['quantity']) && $bgProduct['quantity'] > 0) {
+                            $blindBagProductId = $bgProduct['id'];
+                            break;
+                        }
+                    }
+                    
+                    $blindBagDeliveryModel->blind_bag_product_id = $blindBagProductId;
+                    $blindBagDeliveryModel->delivery_product_id = $delivery['product_id'];
+                    $blindBagDeliveryModel->quantity = $delivery['quantity'];
+                    $blindBagDeliveryModel->unit_cost = $deliveryProduct->cost_price;
+                    $blindBagDeliveryModel->total_cost = $delivery['quantity'] * $deliveryProduct->cost_price;
+                    $blindBagDeliveryModel->save();
+
+                    $totalCost += $blindBagDeliveryModel->total_cost;
+
+                    // 扣减发货商品库存
+                    $deliveryProduct->reduceStock($delivery['quantity'], $request->store_id);
                 }
             }
 
@@ -247,11 +331,21 @@ class SaleController extends Controller
 
             DB::commit();
 
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => '销售记录创建成功！']);
+            }
+
             return redirect()
                 ->route('mobile.sales.index')
                 ->with('success', '销售记录创建成功！');
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('销售记录创建失败：' . $e->getMessage());
+            
+            if ($request->wantsJson()) {
+                return response()->json(['error' => '销售记录创建失败：' . $e->getMessage()], 422);
+            }
+            
             return back()->with('error', '销售记录创建失败：' . $e->getMessage())->withInput();
         }
     }
@@ -334,12 +428,13 @@ class SaleController extends Controller
             // 处理图片上传
             if ($request->hasFile('image')) {
                 if ($sale->image_path) {
-                    Storage::disk('public_direct')->delete($sale->image_path);
+                    Storage::disk('public')->delete($sale->image_path);
                 }
+                
                 $file = $request->file('image');
-                $extension = $file->getClientOriginalExtension();
-                $filename = 'sale_' . time() . '_' . uniqid() . '.' . $extension;
-                $sale->image_path = $file->storeAs('sales', $filename, 'public_direct');
+                if ($file->isValid()) {
+                    $sale->image_path = $file->store('sales', 'public');
+                }
             }
 
             $sale->save();
