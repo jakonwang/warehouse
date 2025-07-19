@@ -45,7 +45,7 @@ class StockOutController extends Controller
         if ($currentStoreId) {
             $currentStore = $stores->firstWhere('id', $currentStoreId);
             if ($currentStore) {
-                $products = $currentStore->availableStandardProducts();
+                $products = $currentStore->availableStandardProducts()->get();
             }
         }
         
