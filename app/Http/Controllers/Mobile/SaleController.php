@@ -161,7 +161,10 @@ class SaleController extends Controller
             // 处理图片上传
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('sales', 'public');
+                $file = $request->file('image');
+                $extension = $file->getClientOriginalExtension();
+                $filename = 'sale_' . time() . '_' . uniqid() . '.' . $extension;
+                $imagePath = $file->storeAs('sales', $filename, 'public_direct');
             }
 
             $sale = new Sale();
@@ -331,9 +334,12 @@ class SaleController extends Controller
             // 处理图片上传
             if ($request->hasFile('image')) {
                 if ($sale->image_path) {
-                    Storage::disk('public')->delete($sale->image_path);
+                    Storage::disk('public_direct')->delete($sale->image_path);
                 }
-                $sale->image_path = $request->file('image')->store('sales', 'public');
+                $file = $request->file('image');
+                $extension = $file->getClientOriginalExtension();
+                $filename = 'sale_' . time() . '_' . uniqid() . '.' . $extension;
+                $sale->image_path = $file->storeAs('sales', $filename, 'public_direct');
             }
 
             $sale->save();

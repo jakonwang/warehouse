@@ -67,10 +67,15 @@
             @if($sale->image_path)
             <div class="mt-4">
                 <span class="text-sm text-gray-600 block mb-2">{{ __('mobile.sales.sale_proof') }}</span>
-                <img src="{{ asset('storage/' . $sale->image_path) }}" 
+                <img src="{{ asset('uploads/' . $sale->image_path) }}" 
                      alt="{{ __('mobile.sales.sale_proof') }}" 
                      class="w-full max-w-xs rounded-lg border border-gray-200"
                      onerror="this.style.display='none'">
+                <div class="mt-2">
+                    <a href="{{ asset('uploads/' . $sale->image_path) }}" target="_blank" class="text-blue-600 text-sm">
+                        <i class="bi bi-arrows-fullscreen mr-1"></i>查看原图
+                    </a>
+                </div>
             </div>
             @endif
         </div>

@@ -20,7 +20,7 @@
         <div class="card p-4 border-l-4 border-red-500 bg-red-50">
             <ul class="text-red-700 space-y-1">
                 @foreach ($errors->all() as $error)
-                    <li>�?{{ $error }}</li>
+                    <li>�?{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
@@ -56,7 +56,15 @@
                 </div>
                 <div>
                     <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.sales.sales_certificate"/></label>
-                    <input type="file" name="image" accept="image/*" capture="environment" class="form-input w-full px-3 py-2 rounded-lg border">
+                    <input type="file" name="image" accept="image/*" class="form-input w-full px-3 py-2 rounded-lg border">
+                    <div class="flex space-x-2 mt-2">
+                        <button type="button" onclick="document.querySelector('input[name=image]').click()" class="flex-1 text-center py-2 bg-blue-100 text-blue-700 rounded-lg">
+                            <i class="bi bi-images mr-1"></i>从相册选择
+                        </button>
+                        <button type="button" onclick="document.querySelector('input[name=image]').setAttribute('capture', 'environment'); document.querySelector('input[name=image]').click()" class="flex-1 text-center py-2 bg-green-100 text-green-700 rounded-lg">
+                            <i class="bi bi-camera mr-1"></i>拍照上传
+                        </button>
+                    </div>
                     <p class="mt-1 text-xs text-gray-500"><x-lang key="mobile.sales.certificate_desc"/></p>
                 </div>
             </div>
@@ -79,9 +87,9 @@
             </div>
         </div>
 
-        <!-- 标品销售模�?-->
+        <!-- 标品销售模�?-->
         <div x-show="salesMode === 'standard'" class="card p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">🛍�?<x-lang key="mobile.sales.standard_products"/></h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">🛍�?<x-lang key="mobile.sales.standard_products"/></h2>
             <div class="space-y-4">
                 @foreach($standardProducts as $product)
                 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
@@ -128,7 +136,7 @@
             </div>
         </div>
 
-        <!-- 盲袋销售模�?-->
+        <!-- 盲袋销售模�?-->
         <div x-show="salesMode === 'blind_bag'" class="space-y-6">
             <!-- 盲袋商品选择 -->
             <div class="card p-6">
@@ -222,7 +230,7 @@
             </div>
         </div>
 
-        <!-- 销售汇�?-->
+        <!-- 销售汇�?-->
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">📊 <x-lang key="mobile.sales.sales_summary"/></h2>
             <div class="grid grid-cols-2 gap-4">

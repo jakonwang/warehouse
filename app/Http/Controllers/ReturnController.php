@@ -107,7 +107,10 @@ class ReturnController extends Controller
             $record->user_id = auth()->id();
 
             if ($request->hasFile('image')) {
-                $record->image_path = $request->file('image')->store('returns', 'public');
+                $file = $request->file('image');
+                $extension = $file->getClientOriginalExtension();
+                $filename = 'return_' . time() . '_' . uniqid() . '.' . $extension;
+                $record->image_path = $file->storeAs('returns', $filename, 'public_direct');
             }
 
             $record->save();
