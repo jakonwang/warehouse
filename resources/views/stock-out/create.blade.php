@@ -25,10 +25,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">选择仓库 *</label>
-                            <select name="store_id" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                            <select name="store_id" id="store-select" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                                 <option value=""><x-lang key="messages.stores.please_select"/></option>
                                 @foreach($stores as $store)
-                                    <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>
+                                    <option value="{{ $store->id }}" {{ old('store_id', $currentStoreId) == $store->id ? 'selected' : '' }}>
                                         {{ $store->name }}
                                     </option>
                                 @endforeach
@@ -58,13 +58,15 @@
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">选择商品 *</label>
-                                <select name="products[0][id]" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
-                                    <option value="">请选择商品</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}" {{ old('products.0.id') == $product->id ? 'selected' : '' }}>
-                                            {{ $product->name }} ({{ $product->code }})
-                                        </option>
-                                    @endforeach
+                                <select name="products[0][id]" class="product-select w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" required>
+                                    <option value="">请先选择仓库</option>
+                                    @if($products->count() > 0)
+                                        @foreach($products as $product)
+                                            <option value="{{ $product->id }}" {{ old('products.0.id') == $product->id ? 'selected' : '' }}>
+                                                {{ $product->name }} ({{ $product->code }})
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
                                 
@@ -161,6 +163,65 @@
 
 <script>
 let productIndex = 1;
+let currentProducts = [];
+
+// 加载仓库商品
+function loadStoreProducts(storeId) {
+    if (!storeId) {
+        // 清空所有商品选择
+        document.querySelectorAll('.product-select').forEach(select => {
+            select.innerHTML = '<option value="">请先选择仓库</option>';
+        });
+        return;
+    }
+    
+    fetch(`/api/stock-outs/store-products?store_id=${storeId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.products) {
+                currentProducts = data.products;
+                updateProductOptions();
+            }
+        })
+        .catch(error => {
+            console.error('加载商品失败:', error);
+            alert('加载商品失败，请重试');
+        });
+}
+
+// 更新所有商品选择框的选项
+function updateProductOptions() {
+    const productSelects = document.querySelectorAll('.product-select');
+    productSelects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">请选择商品</option>';
+        
+        currentProducts.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = product.display_name;
+            if (product.id == currentValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    });
+}
+
+// 监听仓库选择变化
+document.addEventListener('DOMContentLoaded', function() {
+    const storeSelect = document.getElementById('store-select');
+    if (storeSelect) {
+        storeSelect.addEventListener('change', function() {
+            loadStoreProducts(this.value);
+        });
+        
+        // 如果页面加载时已有选中的仓库，加载商品
+        if (storeSelect.value) {
+            loadStoreProducts(storeSelect.value);
+        }
+    }
+});
 
 function addProduct() {
     const container = document.getElementById('products-container');
@@ -170,11 +231,11 @@ function addProduct() {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">选择商品 *</label>
-                <select name="products[${productIndex}][id]" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                <select name="products[${productIndex}][id]" class="product-select w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" required>
                     <option value="">请选择商品</option>
-                    @foreach($products as $product)
-                        <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->code }})</option>
-                    @endforeach
+                    ${currentProducts.map(product => 
+                        `<option value="${product.id}">${product.display_name}</option>`
+                    ).join('')}
                 </select>
             </div>
             

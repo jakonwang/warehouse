@@ -178,6 +178,7 @@ Route::middleware(['auth'])->group(function () {
 
     // 出库管理
     Route::resource('stock-outs', StockOutController::class);
+    Route::get('/api/stock-outs/store-products', [StockOutController::class, 'getStoreProducts'])->name('api.stock-outs.store-products');
 
     // 盘点管理
     Route::resource('inventory-check', InventoryCheckController::class);

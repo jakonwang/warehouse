@@ -34,10 +34,22 @@ class StockOutController extends Controller
      */
     public function create()
     {
-        // 只显示标准商品，因为出库管理不需要对盲袋商品进行操作
-        $products = \App\Models\Product::active()->where('type', 'standard')->get();
+        // 根据用户权限显示仓库
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
-        return view('stock-out.create', compact('products', 'stores'));
+        
+        // 获取当前选中的仓库ID
+        $currentStoreId = request('store_id', session('current_store_id'));
+        
+        // 如果有选中的仓库，获取该仓库的商品
+        $products = collect();
+        if ($currentStoreId) {
+            $currentStore = $stores->where('id', $currentStoreId)->first();
+            if ($currentStore) {
+                $products = $currentStore->availableStandardProducts();
+            }
+        }
+        
+        return view('stock-out.create', compact('products', 'stores', 'currentStoreId'));
     }
 
     /**
@@ -156,6 +168,40 @@ class StockOutController extends Controller
         $record->stock_out_details = $stockOutDetails;
 
         return view('stock-out.show', compact('record'));
+    }
+
+    /**
+     * 获取仓库的商品列表
+     */
+    public function getStoreProducts(Request $request)
+    {
+        $storeId = $request->input('store_id');
+        
+        // 验证用户是否有权限访问该仓库
+        if (!auth()->user()->canAccessStore($storeId)) {
+            return response()->json(['error' => '无权限访问该仓库'], 403);
+        }
+        
+        $store = \App\Models\Store::find($storeId);
+        if (!$store) {
+            return response()->json(['error' => '仓库不存在'], 404);
+        }
+        
+        // 获取该仓库分配的标准商品
+        $products = $store->availableStandardProducts();
+        
+        return response()->json([
+            'products' => $products->map(function($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'code' => $product->code,
+                    'price' => $product->price,
+                    'cost_price' => $product->cost_price,
+                    'display_name' => $product->name . ' (' . $product->code . ')'
+                ];
+            })
+        ]);
     }
 
     /**
