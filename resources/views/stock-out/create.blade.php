@@ -274,17 +274,24 @@ function removeProduct(button) {
 }
 
 // 文件上传预览
-document.querySelector('input[type="file"]').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const label = document.querySelector('label[for="image"]');
-            label.innerHTML = `
-                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-xl">
-            `;
-        };
-        reader.readAsDataURL(file);
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const uploadLabel = fileInput.closest('label');
+                    if (uploadLabel) {
+                        uploadLabel.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-32 object-cover rounded-xl">
+                        `;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     }
 });
 </script>
