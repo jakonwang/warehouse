@@ -56,17 +56,17 @@
                     <div id="products-container">
                         <div class="product-item bg-gray-50 rounded-xl p-4 mb-4">
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">商品系列 *</label>
-                                    <select name="price_series[0][code]" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
-                                        <option value="">请选择商品系列</option>
-                                        @foreach($priceSeries as $series)
-                                            <option value="{{ $series->code }}" {{ old('price_series.0.code') == $series->code ? 'selected' : '' }}>
-                                                {{ $series->code }} - {{ $series->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">选择商品 *</label>
+                                <select name="products[0][id]" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                                    <option value="">请选择商品</option>
+                                    @foreach($products as $product)
+                                        <option value="{{ $product->id }}" {{ old('products.0.id') == $product->id ? 'selected' : '' }}>
+                                            {{ $product->name }} ({{ $product->code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">出库数量 *</label>
@@ -169,11 +169,11 @@ function addProduct() {
     newProduct.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">商品系列 *</label>
-                <select name="price_series[${productIndex}][code]" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
-                    <option value="">请选择商品系列</option>
-                    @foreach($priceSeries as $series)
-                        <option value="{{ $series->code }}">{{ $series->code }} - {{ $series->name }}</option>
+                <label class="block text-sm font-medium text-gray-700 mb-2">选择商品 *</label>
+                <select name="products[${productIndex}][id]" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    <option value="">请选择商品</option>
+                    @foreach($products as $product)
+                        <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->code }})</option>
                     @endforeach
                 </select>
             </div>

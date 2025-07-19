@@ -34,9 +34,10 @@ class StockOutController extends Controller
      */
     public function create()
     {
-        $priceSeries = PriceSeries::all();
+        // 只显示标准商品，因为出库管理不需要对盲袋商品进行操作
+        $products = \App\Models\Product::active()->where('type', 'standard')->get();
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
-        return view('stock-out.create', compact('priceSeries', 'stores'));
+        return view('stock-out.create', compact('products', 'stores'));
     }
 
     /**
@@ -49,10 +50,10 @@ class StockOutController extends Controller
             'customer' => 'nullable|string|max:255',
             'remark' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
-            'price_series' => 'required|array',
-            'price_series.*.code' => 'required|exists:price_series,code',
-            'price_series.*.quantity' => 'required|integer|min:0',
-            'price_series.*.unit_price' => 'required|numeric|min:0',
+            'products' => 'required|array',
+            'products.*.id' => 'required|exists:products,id',
+            'products.*.quantity' => 'required|integer|min:0',
+            'products.*.unit_price' => 'required|numeric|min:0',
         ]);
 
         // 校验用户是否有权限操作该仓库
@@ -78,27 +79,27 @@ class StockOutController extends Controller
             $totalAmount = 0;
             $totalCost = 0;
 
-            foreach ($request->price_series as $item) {
+            foreach ($request->products as $item) {
                 if ($item['quantity'] > 0) {
-                    $priceSeries = PriceSeries::where('code', $item['code'])->first();
+                    $product = \App\Models\Product::find($item['id']);
                     
                     // 检查库存是否足够
                     $inventory = Inventory::where('store_id', $request->store_id)
-                        ->where('series_code', $item['code'])
+                        ->where('product_id', $item['id'])
                         ->first();
                     
                     if (!$inventory || $inventory->quantity < $item['quantity']) {
-                        throw new \Exception("{$priceSeries->code} 库存不足");
+                        throw new \Exception("{$product->name} 库存不足");
                     }
                     
                     // 创建出库明细
                     $detail = new StockOutDetail();
                     $detail->stock_out_record_id = $record->id;
-                    $detail->series_code = $item['code'];
+                    $detail->product_id = $item['id'];
                     $detail->quantity = $item['quantity'];
                     $detail->unit_price = $item['unit_price'];
                     $detail->total_amount = $item['quantity'] * $item['unit_price'];
-                    $detail->total_cost = $item['quantity'] * $priceSeries->cost;
+                    $detail->total_cost = $item['quantity'] * $product->cost_price;
                     $detail->save();
 
                     // 更新库存
@@ -143,11 +144,11 @@ class StockOutController extends Controller
 
         // 获取出库详情
         $stockOutDetails = DB::table('stock_out_details')
-            ->leftJoin('price_series', 'stock_out_details.series_code', '=', 'price_series.code')
+            ->leftJoin('products', 'stock_out_details.product_id', '=', 'products.id')
             ->select(
                 'stock_out_details.*',
-                'price_series.name as series_name',
-                'price_series.code as series_code'
+                'products.name as product_name',
+                'products.code as product_code'
             )
             ->where('stock_out_details.stock_out_record_id', $stockOutRecord->id)
             ->get();
@@ -173,7 +174,7 @@ class StockOutController extends Controller
             // 恢复库存
             foreach ($stockOutRecord->stockOutDetails as $detail) {
                 $inventory = Inventory::where('store_id', $stockOutRecord->store_id)
-                    ->where('series_code', $detail->series_code)
+                    ->where('product_id', $detail->product_id)
                     ->first();
                 
                 if ($inventory) {
