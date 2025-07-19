@@ -51,4 +51,38 @@ Route::get('stores/{store}/inventory', function (App\Models\Store $store) {
             'quantity' => $inventory->quantity,
         ];
     });
+});
+
+// 获取仓库商品数据
+Route::get('stores/{store}/products', function (App\Models\Store $store) {
+    // 获取该仓库分配的商品
+    $products = DB::table('store_products')
+        ->join('products', 'store_products.product_id', '=', 'products.id')
+        ->select(
+            'products.id',
+            'products.name',
+            'products.code',
+            'products.price',
+            'products.cost_price',
+            'products.type',
+            'products.image',
+            'store_products.is_active',
+            'store_products.sort_order'
+        )
+        ->where('store_products.store_id', $store->id)
+        ->where('store_products.is_active', true)
+        ->where('products.is_active', true)
+        ->orderBy('store_products.sort_order')
+        ->orderBy('products.sort_order')
+        ->get();
+    
+    // 分离标准商品和盲袋商品
+    $standardProducts = $products->where('type', 'standard')->values();
+    $blindBagProducts = $products->where('type', 'blind_bag')->values();
+    
+    return response()->json([
+        'success' => true,
+        'standard_products' => $standardProducts,
+        'blind_bag_products' => $blindBagProducts
+    ]);
 }); 

@@ -135,6 +135,13 @@
                 </div>
                 <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.health') }}</span>
             </a>
+            <!-- 新增：产品销售趋势分析菜单项 -->
+            <a href="{{ route('statistics.product-sales-trend') }}" class="flex items-center p-2.5 rounded-md hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200 group {{ request()->routeIs('statistics.product-sales-trend*') ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 shadow-md' : 'text-gray-600 hover:text-purple-700' }}">
+                <div class="w-7 h-7 flex items-center justify-center rounded-md {{ request()->routeIs('statistics.product-sales-trend*') ? '!bg-purple-500 shadow-md' : 'bg-gray-100 group-hover:bg-purple-100' }} transition-all duration-200">
+                    <i class="bi bi-graph-up-arrow {{ request()->routeIs('statistics.product-sales-trend*') ? '!text-white' : 'text-gray-500 group-hover:text-purple-600' }} text-sm"></i>
+                </div>
+                <span class="ml-2.5 font-semibold text-sm">{{ __('navigation.product_sales_trend') }}</span>
+            </a>
         </div>
     </div>
     @endif

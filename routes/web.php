@@ -200,6 +200,12 @@ Route::middleware(['auth'])->group(function () {
 
     // 仓库调拨管理
     Route::prefix('store-transfers')->name('store-transfers.')->group(function () {
+        // API接口 - 必须放在资源路由之前
+        Route::get('/source-store-products', [\App\Http\Controllers\StoreTransferController::class, 'getSourceStoreProducts'])->name('source-store-products');
+        Route::get('/target-store-products', [\App\Http\Controllers\StoreTransferController::class, 'getTargetStoreProducts'])->name('target-store-products');
+        Route::get('/product-comparison', [\App\Http\Controllers\StoreTransferController::class, 'getProductComparison'])->name('product-comparison');
+        
+        // 资源路由
         Route::get('/', [\App\Http\Controllers\StoreTransferController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\StoreTransferController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\StoreTransferController::class, 'store'])->name('store');
@@ -209,10 +215,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{storeTransfer}/complete', [\App\Http\Controllers\StoreTransferController::class, 'complete'])->name('complete');
         Route::post('/{storeTransfer}/cancel', [\App\Http\Controllers\StoreTransferController::class, 'cancel'])->name('cancel');
         Route::delete('/{storeTransfer}', [\App\Http\Controllers\StoreTransferController::class, 'destroy'])->name('destroy');
-        
-        // API接口
-        Route::get('/available-products', [\App\Http\Controllers\StoreTransferController::class, 'getAvailableProducts'])->name('available-products');
-        Route::get('/product-stock', [\App\Http\Controllers\StoreTransferController::class, 'getProductStock'])->name('product-stock');
     });
 
     // 库存周转率统计
@@ -227,6 +229,11 @@ Route::middleware(['auth'])->group(function () {
         })->name('sales.test');
         Route::get('/blind-bag-cost-test', [\App\Http\Controllers\SaleStatisticsController::class, 'testBlindBagCost'])->name('blind-bag-cost-test');
         Route::get('/health', [\App\Http\Controllers\StatisticsController::class, 'health'])->name('health');
+        
+        // 产品销售趋势分析
+        Route::get('/product-sales-trend', [\App\Http\Controllers\ProductSalesTrendController::class, 'index'])->name('product-sales-trend');
+        Route::get('/product-sales-trend/export', [\App\Http\Controllers\ProductSalesTrendController::class, 'export'])->name('product-sales-trend.export');
+        Route::get('/product-sales-trend/detail', [\App\Http\Controllers\ProductSalesTrendController::class, 'getProductDetailTrend'])->name('product-sales-trend.detail');
     });
 
     // 编辑个人资料

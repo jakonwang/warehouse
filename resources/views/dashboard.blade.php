@@ -89,6 +89,7 @@ $customRange = request('range', '');
                     </select>
                     <input id="customRangeInput" name="range" type="text" value="{{ request('range') }}" placeholder="选择日期区间" class="ml-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64" style="display: none;" readonly />
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"> <i class="bi bi-arrow-clockwise mr-2"></i> <span>{{ __('dashboard.refresh_data') }}</span></button>
+                    <a href="{{ route('dashboard') }}?refresh=true" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"> <i class="bi bi-lightning mr-2"></i> <span>强制刷新</span></a>
                 </form>
             </div>
         </div>

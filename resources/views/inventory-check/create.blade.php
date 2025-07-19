@@ -110,13 +110,13 @@
                                             @change="updateSystemQuantity(index)"
                                             required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">请选择商品</option>
-                                        @foreach($products as $product)
-                                            <option value="{{ $product->id }}" 
-                                                    data-cost="{{ $product->cost_price }}"
-                                                    data-name="{{ $product->name }}">
-                                                {{ $product->name }} (¥{{ $product->price }})
+                                        <template x-for="product in storeProducts" :key="product.id">
+                                            <option :value="product.id" 
+                                                    :data-cost="product.cost_price"
+                                                    :data-name="product.name">
+                                                <span x-text="product.name"></span> (¥<span x-text="product.price"></span>)
                                             </option>
-                                        @endforeach
+                                        </template>
                                     </select>
                                 </div>
                                 
@@ -219,6 +219,7 @@ function inventoryCheckManager() {
             details: []
         },
         inventory: [], // 存储当前仓库的库存数据
+        storeProducts: [], // 存储当前仓库的商品数据
         
         addProduct() {
             this.formData.details.push({
@@ -276,22 +277,35 @@ function inventoryCheckManager() {
         async loadInventory() {
             if (!this.formData.store_id) {
                 this.inventory = [];
+                this.storeProducts = [];
                 return;
             }
             
             try {
-                const response = await fetch(`/api/stores/${this.formData.store_id}/inventory`);
-                if (response.ok) {
-                    this.inventory = await response.json();
-                    // 更新已选择商品的系统库存
-                    this.formData.details.forEach((item, index) => {
-                        if (item.product_id) {
-                            this.updateSystemQuantity(index);
-                        }
-                    });
+                // 同时加载库存和商品数据
+                const [inventoryResponse, productsResponse] = await Promise.all([
+                    fetch(`/api/stores/${this.formData.store_id}/inventory`),
+                    fetch(`/api/stores/${this.formData.store_id}/products`)
+                ]);
+                
+                if (inventoryResponse.ok) {
+                    this.inventory = await inventoryResponse.json();
                 }
+                
+                if (productsResponse.ok) {
+                    const productsData = await productsResponse.json();
+                    // 只显示标准商品，因为库存盘点不需要对盲袋商品进行操作
+                    this.storeProducts = productsData.standard_products || [];
+                }
+                
+                // 更新已选择商品的系统库存
+                this.formData.details.forEach((item, index) => {
+                    if (item.product_id) {
+                        this.updateSystemQuantity(index);
+                    }
+                });
             } catch (error) {
-                console.error('加载库存数据失败:', error);
+                console.error('加载数据失败:', error);
             }
         }
     }

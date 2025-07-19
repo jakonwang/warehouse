@@ -201,8 +201,11 @@ class SaleController extends Controller
 
             DB::commit();
 
-            return redirect()->route('sales.show', $sale)
-                ->with('success', '销售记录创建成功！');
+            // 清除仪表盘缓存，确保数据及时更新
+            $cacheKey = 'dashboard_data_' . auth()->id();
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
+
+            return redirect()->route('sales.index')->with('success', '销售记录已保存');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', '销售记录创建失败：' . $e->getMessage());
@@ -347,6 +350,10 @@ class SaleController extends Controller
 
             DB::commit();
 
+            // 清除仪表盘缓存，确保数据及时更新
+            $cacheKey = 'dashboard_data_' . auth()->id();
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
+
             return redirect()->route('sales.show', $sale)
                 ->with('success', '销售记录更新成功！');
         } catch (\Exception $e) {
@@ -371,6 +378,10 @@ class SaleController extends Controller
             $sale->delete();
 
             DB::commit();
+
+            // 清除仪表盘缓存，确保数据及时更新
+            $cacheKey = 'dashboard_data_' . auth()->id();
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
 
             return redirect()->route('sales.index')
                 ->with('success', '销售记录删除成功！');
@@ -670,6 +681,10 @@ class SaleController extends Controller
             $sale->save();
 
             DB::commit();
+
+            // 清除仪表盘缓存，确保数据及时更新
+            $cacheKey = 'dashboard_data_' . auth()->id();
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
 
             return redirect()
                 ->route('mobile.sales.index')

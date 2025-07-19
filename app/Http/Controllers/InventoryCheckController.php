@@ -49,9 +49,8 @@ class InventoryCheckController extends Controller
     public function create()
     {
         $stores = DB::table('stores')->where('is_active', true)->select('id', 'name')->get();
-        // 只显示标准商品，因为库存盘点不需要对盲袋商品进行操作
-        $products = DB::table('products')->where('is_active', true)->where('type', 'standard')->select('id', 'name', 'code')->get();
-        return view('inventory-check.create', compact('stores', 'products'));
+        // 不传递所有商品，让前端根据选择的仓库动态加载
+        return view('inventory-check.create', compact('stores'));
     }
 
     /**

@@ -20,8 +20,17 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // 使用缓存获取仪表盘数据，缓存时间增加到10分钟
-        $dashboardData = Cache::remember('dashboard_data_' . auth()->id(), 600, function () {
+        // 检查是否有强制刷新参数
+        $forceRefresh = request('refresh') === 'true';
+        
+        // 使用缓存获取仪表盘数据，缓存时间减少到2分钟
+        $cacheKey = 'dashboard_data_' . auth()->id();
+        
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
+        
+        $dashboardData = Cache::remember($cacheKey, 120, function () {
             return $this->getDashboardData();
         });
 

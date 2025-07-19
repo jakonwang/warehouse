@@ -21,4 +21,5 @@ return [
     'backup' => 'Sao lưu',
     'monitor' => 'Giám sát',
     'health' => 'Sức khỏe',
+    'product_sales_trend' => 'Xu hướng',
 ]; 

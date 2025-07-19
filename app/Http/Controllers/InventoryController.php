@@ -259,13 +259,24 @@ class InventoryController extends Controller
     public function check(Request $request)
     {
         $checkDate = $request->input('check_date', now()->format('Y-m-d'));
+        $currentStoreId = session('current_store_id');
+        $user = auth()->user();
         
-        $inventory = Inventory::with(['product:id,name,code,image'])
+        $query = Inventory::with(['product:id,name,code,image'])
             ->whereHas('product', function($query) {
                 $query->where('type', 'standard');
-            })
-            ->orderBy('product_id')
-            ->paginate(10);
+            });
+            
+        // 根据当前选择的仓库筛选
+        if ($currentStoreId && $currentStoreId != 0) {
+            $query->where('store_id', $currentStoreId);
+        } elseif (!$user->isSuperAdmin()) {
+            // 如果不是超级管理员，只显示用户有权限的仓库
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+            $query->whereIn('store_id', $userStoreIds);
+        }
+        
+        $inventory = $query->orderBy('product_id')->paginate(10);
 
         return view('inventory.check', compact('inventory', 'checkDate'));
     }
@@ -285,9 +296,17 @@ class InventoryController extends Controller
         try {
             DB::beginTransaction();
 
+            // 获取当前选择的仓库ID
+            $currentStoreId = session('current_store_id');
+            if (!$currentStoreId || $currentStoreId == 0) {
+                // 如果没有选择仓库，使用用户的第一个仓库
+                $userStore = auth()->user()->stores()->first();
+                $currentStoreId = $userStore ? $userStore->id : 1;
+            }
+
             // 创建盘点记录
             $checkRecord = InventoryCheckRecord::create([
-                'store_id' => auth()->user()->stores()->first()->id ?? 1, // 使用用户的第一个仓库，如果没有则使用默认值
+                'store_id' => $currentStoreId,
                 'user_id' => auth()->id(),
                 'status' => 'pending',
                 'remark' => '库存盘点调整 - ' . $request->check_date,

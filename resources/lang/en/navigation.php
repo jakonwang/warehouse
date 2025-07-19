@@ -21,4 +21,5 @@ return [
     'backup' => 'Backup',
     'monitor' => 'Monitor',
     'health' => 'Health',
+    'product_sales_trend' => 'Sales Trend',
 ]; 
