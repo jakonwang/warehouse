@@ -35,7 +35,7 @@ class StockOutController extends Controller
     public function create()
     {
         $priceSeries = PriceSeries::all();
-        $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->get();
+        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
         return view('stock-out.create', compact('priceSeries', 'stores'));
     }
 
