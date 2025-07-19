@@ -53,7 +53,7 @@ class BlindBagSaleController extends Controller
             'delivery_content.*' => 'integer|min:0',
             'customer_name' => 'nullable|string|max:100',
             'customer_phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
             'sale_amount' => 'required|numeric|min:0',
             'total_cost' => 'required|numeric|min:0',
             'profit' => 'required|numeric'

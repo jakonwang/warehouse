@@ -319,7 +319,7 @@ class ReturnController extends Controller
             'store_id' => 'required|exists:stores,id',
             'customer' => 'nullable|string|max:255',
             'remark' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:10240',
             'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'nullable|numeric|min:0',

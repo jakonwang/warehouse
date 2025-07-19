@@ -241,7 +241,7 @@
             
             <input type="file" name="image" accept="image/*" capture="environment" 
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            <p class="mt-1 text-xs text-gray-500">支持 JPG、PNG、GIF 格式，最大 2MB，或者从相机拍摄</p>
+            <p class="mt-1 text-xs text-gray-500">支持 JPG、PNG、GIF 格式，最大 10MB，或者从相机拍摄</p>
         </div>
 
         <!-- 统计汇总 -->
