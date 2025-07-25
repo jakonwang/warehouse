@@ -178,9 +178,10 @@ class ProductSalesTrendController extends Controller
     private function getProductSalesTrendData($data, $startDate, $endDate, $limit)
     {
         return $data->map(function ($item) use ($startDate, $endDate) {
-            $days = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
-            $item->avg_daily_sales = round($item->total_quantity / $days, 2);
-            $item->sales_frequency = $item->active_days > 0 ? round($item->active_days / $days * 100, 1) : 0;
+            // 使用实际有销售记录的天数计算平均日销量
+            $activeDays = max($item->active_days, 1); // 至少为1天，避免除零错误
+            $item->avg_daily_sales = round($item->total_quantity / $activeDays, 2);
+            $item->sales_frequency = $item->active_days > 0 ? round($item->active_days / (Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1) * 100, 1) : 0;
             
             // 计算趋势（与上一周期对比）
             $item->trend = $this->calculateTrend($item->product_id, $startDate, $endDate);

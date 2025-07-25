@@ -408,9 +408,11 @@ function productSalesTrend(config) {
                 this.totalQuantity = this.trendData.reduce((sum, item) => sum + parseInt(item.total_quantity || 0), 0).toLocaleString();
                 this.totalAmount = this.trendData.reduce((sum, item) => sum + parseFloat(item.total_amount || 0), 0).toFixed(2);
                 
+                // 修复平均日销量计算：总销量除以天数
                 if (this.dailyTrend && this.dailyTrend.length > 0) {
-                    const avgQuantity = this.dailyTrend.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0) / this.dailyTrend.length;
-                    this.avgDailySales = Math.round(avgQuantity).toLocaleString();
+                    const totalQuantity = this.trendData.reduce((sum, item) => sum + parseInt(item.total_quantity || 0), 0);
+                    const days = this.dailyTrend.length;
+                    this.avgDailySales = Math.round(totalQuantity / days).toLocaleString();
                 }
                 
                 if (this.trendData.length > 0) {
