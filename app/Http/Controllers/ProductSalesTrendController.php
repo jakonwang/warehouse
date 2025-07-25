@@ -49,8 +49,7 @@ class ProductSalesTrendController extends Controller
         $trendData = $this->getProductSalesTrendData($productQuery, $startDate, $endDate, $limit);
         
         // 获取每日销售趋势（重新构建查询）
-        $dailyQuery = $this->buildBaseSalesQuery($startDate, $endDate, $storeId, null, $user); // 不按产品筛选
-        $dailyTrend = $this->getDailySalesTrend($dailyQuery, $startDate, $endDate);
+        $dailyTrend = $this->getDailySalesTrend(null, $startDate, $endDate);
         
         // 获取销售预测数据
         $predictionData = $this->generateSalesPrediction($dailyTrend);
@@ -78,67 +77,118 @@ class ProductSalesTrendController extends Controller
      */
     private function buildBaseSalesQuery($startDate, $endDate, $storeId, $productId, $user)
     {
-        $query = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
+        // 构建标准商品销售查询（来自sale_details表）
+        $standardQuery = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
             ->join('products', 'sale_details.product_id', '=', 'products.id')
             ->whereBetween('sales.created_at', [
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay()
-            ]);
+            ])
+            ->where('products.type', 'standard');
+
+        // 构建盲袋发货查询（来自blind_bag_deliveries表）
+        $blindBagQuery = DB::table('blind_bag_deliveries')
+            ->join('sales', 'blind_bag_deliveries.sale_id', '=', 'sales.id')
+            ->join('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
+            ->whereBetween('sales.created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ])
+            ->where('products.type', 'standard');
 
         // 权限控制
         if (!$user->isSuperAdmin()) {
             $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
-            $query->whereIn('sales.store_id', $userStoreIds);
+            $standardQuery->whereIn('sales.store_id', $userStoreIds);
+            $blindBagQuery->whereIn('sales.store_id', $userStoreIds);
         }
 
         // 仓库筛选
         if ($storeId && $storeId != 0) {
-            $query->where('sales.store_id', $storeId);
+            $standardQuery->where('sales.store_id', $storeId);
+            $blindBagQuery->where('sales.store_id', $storeId);
         }
-
-        // 只包含标准商品，排除盲袋商品
-        $query->where('products.type', 'standard');
 
         // 产品筛选
         if ($productId) {
-            $query->where('sale_details.product_id', $productId);
+            $standardQuery->where('sale_details.product_id', $productId);
+            $blindBagQuery->where('blind_bag_deliveries.delivery_product_id', $productId);
         }
 
-        return $query;
+        // 合并两个查询结果
+        $standardData = $standardQuery->select(
+            'products.id as product_id',
+            'products.name as product_name',
+            'products.code as product_code',
+            'products.image as product_image',
+            DB::raw('SUM(sale_details.quantity) as total_quantity'),
+            DB::raw('SUM(sale_details.total) as total_amount'),
+            DB::raw('COUNT(DISTINCT sales.id) as order_count'),
+            DB::raw('AVG(sale_details.price) as avg_price'),
+            DB::raw('COUNT(DISTINCT DATE(sales.created_at)) as active_days')
+        )
+        ->groupBy('products.id', 'products.name', 'products.code', 'products.image')
+        ->get();
+
+        $blindBagData = $blindBagQuery->select(
+            'products.id as product_id',
+            'products.name as product_name',
+            'products.code as product_code',
+            'products.image as product_image',
+            DB::raw('SUM(blind_bag_deliveries.quantity) as total_quantity'),
+            DB::raw('SUM(blind_bag_deliveries.total_cost) as total_amount'),
+            DB::raw('COUNT(DISTINCT sales.id) as order_count'),
+            DB::raw('AVG(blind_bag_deliveries.unit_cost) as avg_price'),
+            DB::raw('COUNT(DISTINCT DATE(sales.created_at)) as active_days')
+        )
+        ->groupBy('products.id', 'products.name', 'products.code', 'products.image')
+        ->get();
+
+        // 合并数据
+        $combinedData = collect();
+        
+        // 处理标准商品销售数据
+        foreach ($standardData as $item) {
+            $combinedData->put($item->product_id, $item);
+        }
+        
+        // 处理盲袋发货数据，累加到现有数据或创建新记录
+        foreach ($blindBagData as $item) {
+            if ($combinedData->has($item->product_id)) {
+                // 累加到现有记录
+                $existing = $combinedData->get($item->product_id);
+                $existing->total_quantity += $item->total_quantity;
+                $existing->total_amount += $item->total_amount;
+                $existing->order_count += $item->order_count;
+                $existing->active_days = max($existing->active_days, $item->active_days);
+                // 重新计算平均价格
+                $existing->avg_price = ($existing->avg_price + $item->avg_price) / 2;
+            } else {
+                // 创建新记录
+                $combinedData->put($item->product_id, $item);
+            }
+        }
+
+        return $combinedData->values();
     }
 
     /**
      * 获取产品销售趋势数据
      */
-    private function getProductSalesTrendData($query, $startDate, $endDate, $limit)
+    private function getProductSalesTrendData($data, $startDate, $endDate, $limit)
     {
-        $data = $query->select(
-                'products.id as product_id',
-                'products.name as product_name',
-                'products.code as product_code',
-                'products.image as product_image',
-                DB::raw('SUM(sale_details.quantity) as total_quantity'),
-                DB::raw('SUM(sale_details.total) as total_amount'),
-                DB::raw('COUNT(DISTINCT sales.id) as order_count'),
-                DB::raw('AVG(sale_details.price) as avg_price'),
-                DB::raw('COUNT(DISTINCT DATE(sales.created_at)) as active_days')
-            )
-            ->groupBy('products.id', 'products.name', 'products.code', 'products.image')
-            ->orderByRaw('SUM(sale_details.quantity) DESC')
-            ->limit($limit)
-            ->get()
-            ->map(function ($item) use ($startDate, $endDate) {
-                $days = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
-                $item->avg_daily_sales = round($item->total_quantity / $days, 2);
-                $item->sales_frequency = $item->active_days > 0 ? round($item->active_days / $days * 100, 1) : 0;
-                
-                // 计算趋势（与上一周期对比）
-                $item->trend = $this->calculateTrend($item->product_id, $startDate, $endDate);
-                
-                return $item;
-            });
-
-        return $data;
+        return $data->map(function ($item) use ($startDate, $endDate) {
+            $days = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+            $item->avg_daily_sales = round($item->total_quantity / $days, 2);
+            $item->sales_frequency = $item->active_days > 0 ? round($item->active_days / $days * 100, 1) : 0;
+            
+            // 计算趋势（与上一周期对比）
+            $item->trend = $this->calculateTrend($item->product_id, $startDate, $endDate);
+            
+            return $item;
+        })
+        ->sortByDesc('total_quantity')
+        ->take($limit);
     }
 
     /**
@@ -146,15 +196,65 @@ class ProductSalesTrendController extends Controller
      */
     private function getDailySalesTrend($query, $startDate, $endDate)
     {
-        return $query->select(
+        // 获取标准商品销售数据
+        $standardData = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_details.product_id', '=', 'products.id')
+            ->whereBetween('sales.created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ])
+            ->where('products.type', 'standard')
+            ->select(
                 DB::raw('DATE(sales.created_at) as sale_date'),
                 DB::raw('SUM(sale_details.quantity) as daily_quantity'),
                 DB::raw('SUM(sale_details.total) as daily_amount'),
                 DB::raw('COUNT(DISTINCT sale_details.product_id) as product_types')
             )
             ->groupBy('sale_date')
-            ->orderBy('sale_date')
-            ->get()
+            ->get();
+
+        // 获取盲袋发货数据
+        $blindBagData = DB::table('blind_bag_deliveries')
+            ->join('sales', 'blind_bag_deliveries.sale_id', '=', 'sales.id')
+            ->join('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
+            ->whereBetween('sales.created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ])
+            ->where('products.type', 'standard')
+            ->select(
+                DB::raw('DATE(sales.created_at) as sale_date'),
+                DB::raw('SUM(blind_bag_deliveries.quantity) as daily_quantity'),
+                DB::raw('SUM(blind_bag_deliveries.total_cost) as daily_amount'),
+                DB::raw('COUNT(DISTINCT blind_bag_deliveries.delivery_product_id) as product_types')
+            )
+            ->groupBy('sale_date')
+            ->get();
+
+        // 合并数据
+        $combinedData = collect();
+        
+        // 处理标准商品销售数据
+        foreach ($standardData as $item) {
+            $combinedData->put($item->sale_date, $item);
+        }
+        
+        // 处理盲袋发货数据，累加到现有数据或创建新记录
+        foreach ($blindBagData as $item) {
+            if ($combinedData->has($item->sale_date)) {
+                // 累加到现有记录
+                $existing = $combinedData->get($item->sale_date);
+                $existing->daily_quantity += $item->daily_quantity;
+                $existing->daily_amount += $item->daily_amount;
+                $existing->product_types += $item->product_types;
+            } else {
+                // 创建新记录
+                $combinedData->put($item->sale_date, $item);
+            }
+        }
+
+        return $combinedData->values()
+            ->sortBy('sale_date')
             ->map(function ($item) {
                 $item->formatted_date = Carbon::parse($item->sale_date)->format('m-d');
                 return $item;
