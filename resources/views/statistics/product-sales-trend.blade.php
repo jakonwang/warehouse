@@ -506,14 +506,23 @@ function productSalesTrend(config) {
         },
 
         loadProductDetailChart(productId) {
+            console.log('Loading product detail chart for product ID:', productId);
+            
             if (this.productDetailChart) {
+                console.log('Destroying existing chart');
                 this.productDetailChart.destroy();
             }
 
             const ctx = document.getElementById('productDetailChart');
-            if (!ctx) return;
+            if (!ctx) {
+                console.error('Canvas element not found');
+                return;
+            }
+
+            console.log('Canvas element found:', ctx);
 
             try {
+                console.log('Creating new chart');
                 this.productDetailChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -535,13 +544,28 @@ function productSalesTrend(config) {
                     }
                 });
 
+                console.log('Chart created successfully');
+
                 const detailUrl = '{{ route("statistics.product-sales-trend.detail") }}';
+                console.log('Fetching data from:', detailUrl);
+                
                 fetch(`${detailUrl}?product_id=${productId}&days=30`)
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        return response.json();
+                    })
                     .then(data => {
-                        this.productDetailChart.data.labels = data.map(item => item.sale_date);
-                        this.productDetailChart.data.datasets[0].data = data.map(item => item.quantity);
-                        this.productDetailChart.update();
+                        console.log('Received data:', data);
+                        
+                        if (data && Array.isArray(data) && data.length > 0) {
+                            console.log('Updating chart with data');
+                            this.productDetailChart.data.labels = data.map(item => item.date);
+                            this.productDetailChart.data.datasets[0].data = data.map(item => item.quantity);
+                            this.productDetailChart.update();
+                            console.log('Chart updated successfully');
+                        } else {
+                            console.warn('No data received for product detail');
+                        }
                     })
                     .catch(error => {
                         console.error('Error loading product detail:', error);
