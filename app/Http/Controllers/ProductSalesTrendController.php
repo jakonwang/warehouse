@@ -476,7 +476,8 @@ class ProductSalesTrendController extends Controller
         $endDate = now();
         $startDate = $endDate->copy()->subDays($days - 1);
         
-        $data = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
+        // 获取标准商品销售数据
+        $standardData = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
             ->join('products', 'sale_details.product_id', '=', 'products.id')
             ->where('sale_details.product_id', $productId)
             ->where('products.type', 'standard')
@@ -487,8 +488,47 @@ class ProductSalesTrendController extends Controller
                 DB::raw('SUM(sale_details.total) as amount')
             )
             ->groupBy('sale_date')
-            ->orderBy('sale_date')
-            ->get()
+            ->get();
+
+        // 获取盲袋发货数据
+        $blindBagData = DB::table('blind_bag_deliveries')
+            ->join('sales', 'blind_bag_deliveries.sale_id', '=', 'sales.id')
+            ->join('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
+            ->where('blind_bag_deliveries.delivery_product_id', $productId)
+            ->where('products.type', 'standard')
+            ->whereBetween('sales.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->select(
+                DB::raw('DATE(sales.created_at) as sale_date'),
+                DB::raw('SUM(blind_bag_deliveries.quantity) as quantity'),
+                DB::raw('SUM(blind_bag_deliveries.total_cost) as amount')
+            )
+            ->groupBy('sale_date')
+            ->get();
+
+        // 合并数据
+        $combinedData = collect();
+        
+        // 处理标准商品销售数据
+        foreach ($standardData as $item) {
+            $combinedData->put($item->sale_date, $item);
+        }
+        
+        // 处理盲袋发货数据，累加到现有数据或创建新记录
+        foreach ($blindBagData as $item) {
+            if ($combinedData->has($item->sale_date)) {
+                // 累加到现有记录
+                $existing = $combinedData->get($item->sale_date);
+                $existing->quantity += $item->quantity;
+                $existing->amount += $item->amount;
+            } else {
+                // 创建新记录
+                $combinedData->put($item->sale_date, $item);
+            }
+        }
+
+        // 转换为API响应格式
+        $data = $combinedData->values()
+            ->sortBy('sale_date')
             ->map(function ($item) {
                 return [
                     'date' => Carbon::parse($item->sale_date)->format('Y-m-d'),
