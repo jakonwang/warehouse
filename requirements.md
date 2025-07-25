@@ -1487,3 +1487,38 @@ function editSaleForm() {
 - 正确处理金额字段（直接销售用`total`，盲袋发货用`total_cost`）
 - 按日期排序确保时间序列正确
 - 保持API响应格式的一致性
+
+### 12.4 Chart.js错误修复 (2025-07-25)
+
+**问题描述**：
+销售趋势分析页面中，点击产品详情按钮时出现Chart.js错误：
+```
+chart.js:13 Uncaught TypeError: Cannot read properties of undefined (reading 'includes')
+```
+
+**问题原因**：
+- **数据映射错误**：前端代码中使用了错误的字段名（`sale_date`而不是`date`）
+- **数据验证不足**：没有对API返回的数据进行充分验证
+- **错误处理不完善**：缺少对undefined数据的处理
+
+**修复方案**：
+1. **修复数据映射**：将`sale_date`改为`date`，与API返回格式一致
+2. **增强数据验证**：添加`data && Array.isArray(data) && data.length > 0`检查
+3. **添加调试信息**：增加详细的console.log，便于问题排查
+4. **改进错误处理**：在数据更新前进行充分验证
+
+**修改文件**：
+- `resources/views/statistics/product-sales-trend.blade.php`
+  - `loadProductDetailChart()` 方法：修复数据映射和错误处理
+
+**修复效果**：
+- 消除Chart.js TypeError错误
+- 产品详情图表正常显示
+- 调试信息完整，便于后续维护
+- 数据验证更加健壮
+
+**技术要点**：
+- 确保前后端数据字段名称一致
+- 使用`Array.isArray()`验证数据类型
+- 添加详细的调试日志
+- 在图表更新前进行数据验证
