@@ -76,16 +76,21 @@ $customRange = request('range', '');
                             <i class="bi bi-eye mr-1"></i>已选择仓库: {{ $currentStore->name }}
                         </span>
                     @endif
+                    
+                    <!-- 当前时间范围显示 -->
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                        <i class="bi bi-calendar3 mr-1"></i>{{ $dateRange['label'] }}: {{ $dateRange['start']->format('Y-m-d') }} 至 {{ $dateRange['end']->format('Y-m-d') }}
+                    </span>
                 </div>
             </div>
             <div class="mt-4 lg:mt-0 flex items-center space-x-3">
                 <form id="periodForm" method="get" action="/dashboard" class="inline-flex items-center space-x-3">
                     <select name="period" id="periodSelect" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="handlePeriodChange()">
-                        <option value="today" {{ request('period', 'today') == 'today' ? 'selected' : '' }}>今日</option>
-                        <option value="yesterday" {{ request('period') == 'yesterday' ? 'selected' : '' }}>昨日</option>
-                        <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>本周</option>
-                        <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>本月</option>
-                        <option value="quarter" {{ request('period') == 'quarter' ? 'selected' : '' }}>本季度</option>
+                        <option value="today" {{ request('period', 'today') == 'today' ? 'selected' : '' }}>今日 ({{ $allDateRanges['today']['display'] }})</option>
+                        <option value="yesterday" {{ request('period') == 'yesterday' ? 'selected' : '' }}>昨日 ({{ $allDateRanges['yesterday']['display'] }})</option>
+                        <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>本周 ({{ $allDateRanges['week']['display'] }})</option>
+                        <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>本月 ({{ $allDateRanges['month']['display'] }})</option>
+                        <option value="quarter" {{ request('period') == 'quarter' ? 'selected' : '' }}>本季度 ({{ $allDateRanges['quarter']['display'] }})</option>
                         <option value="custom" {{ request('period') == 'custom' ? 'selected' : '' }}>自定义</option>
                     </select>
                     <input id="customRangeInput" name="range" type="text" value="{{ request('range') }}" placeholder="选择日期区间" class="ml-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64" style="display: none;" readonly />

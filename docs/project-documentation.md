@@ -215,6 +215,7 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 #### 解决方案
 1. **修改 DashboardController** (`app/Http/Controllers/DashboardController.php`)
    - 添加 `calculateDateRange()` 方法计算时间范围
+   - 添加 `getAllDateRanges()` 方法获取所有时间范围的日期信息
    - 修改 `index()` 方法处理时间筛选参数
    - 更新所有数据查询方法支持时间范围参数
    - 添加"昨天"时间选项
@@ -225,6 +226,8 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
    - 修复自定义日期选择器功能
    - 更新数据显示，使用动态时间范围标签
    - 改进JavaScript处理时间选择变化
+   - 时间选择器显示具体日期范围（如：今日 (08-02)、本周 (07-28 ~ 08-03)）
+   - 页面顶部添加当前时间范围标识显示
 
 3. **支持的时间范围**
    - 今日：当天00:00:00到23:59:59
@@ -242,6 +245,8 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 - ✅ 热销商品和仓库排行也支持时间筛选
 - ✅ 销售趋势图表基于选择的时间范围显示
 - ✅ 改进了缓存机制，避免数据混淆
+- ✅ 时间选择器显示具体日期范围，提升用户体验
+- ✅ 页面顶部显示当前选择的时间范围标识
 
 #### 相关文件
 - `app/Http/Controllers/DashboardController.php` - 改进的控制器

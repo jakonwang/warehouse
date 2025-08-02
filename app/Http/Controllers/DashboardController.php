@@ -45,8 +45,52 @@ class DashboardController extends Controller
         $dashboardData['dateRange'] = $dateRange;
         $dashboardData['currentPeriod'] = $period;
         $dashboardData['customRange'] = $customRange;
+        
+        // 添加所有时间范围的日期信息
+        $dashboardData['allDateRanges'] = $this->getAllDateRanges();
 
         return view('dashboard', $dashboardData);
+    }
+
+    /**
+     * 获取所有时间范围的日期信息
+     */
+    private function getAllDateRanges()
+    {
+        $now = now();
+        
+        return [
+            'today' => [
+                'start' => $now->copy()->startOfDay(),
+                'end' => $now->copy()->endOfDay(),
+                'label' => '今日',
+                'display' => $now->format('m-d')
+            ],
+            'yesterday' => [
+                'start' => $now->copy()->subDay()->startOfDay(),
+                'end' => $now->copy()->subDay()->endOfDay(),
+                'label' => '昨日',
+                'display' => $now->copy()->subDay()->format('m-d')
+            ],
+            'week' => [
+                'start' => $now->copy()->startOfWeek(),
+                'end' => $now->copy()->endOfWeek(),
+                'label' => '本周',
+                'display' => $now->copy()->startOfWeek()->format('m-d') . ' ~ ' . $now->copy()->endOfWeek()->format('m-d')
+            ],
+            'month' => [
+                'start' => $now->copy()->startOfMonth(),
+                'end' => $now->copy()->endOfMonth(),
+                'label' => '本月',
+                'display' => $now->copy()->startOfMonth()->format('m-d') . ' ~ ' . $now->copy()->endOfMonth()->format('m-d')
+            ],
+            'quarter' => [
+                'start' => $now->copy()->startOfQuarter(),
+                'end' => $now->copy()->endOfQuarter(),
+                'label' => '本季度',
+                'display' => $now->copy()->startOfQuarter()->format('m-d') . ' ~ ' . $now->copy()->endOfQuarter()->format('m-d')
+            ]
+        ];
     }
 
     /**
