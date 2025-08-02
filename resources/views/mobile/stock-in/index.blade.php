@@ -18,7 +18,7 @@
         <div class="card p-4 border-l-4 border-red-500 bg-red-50">
             <ul class="text-red-700 space-y-1">
                 @foreach ($errors->all() as $error)
-                    <li>�?{{ $error }}</li>
+                    <li>�?{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
@@ -45,7 +45,7 @@
                     </select>
                 </div>
 
-                <!-- 供应�?-->
+                <!-- 供应�?-->
                 <div>
                     <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.stock_in.supplier"/></label>
                     <input type="text" name="supplier" value="{{ old('supplier') }}" 
@@ -118,14 +118,14 @@
                     </div>
                 </template>
                 
-                <!-- 空状�?-->
+                <!-- 空状�?-->
                 <div x-show="formData.products.length === 0" class="text-center py-8 text-gray-500">
                     <i class="bi bi-box text-4xl mb-2"></i>
                     <p><x-lang key="mobile.stock_in.no_products"/></p>
                 </div>
             </div>
             
-            <!-- 汇总信�?-->
+            <!-- 汇总信�?-->
             <div class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
                 <h4 class="text-md font-semibold text-blue-900 mb-3"><x-lang key="mobile.stock_in.summary"/></h4>
                 <div class="grid grid-cols-3 gap-4">
@@ -154,7 +154,7 @@
         </div>
     </form>
 
-    <!-- 最近入库记�?-->
+    <!-- 最近入库记�?-->
     @if(isset($recentRecords) && $recentRecords->count() > 0)
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 <x-lang key="mobile.stock_in.recent_records"/></h2>
@@ -236,9 +236,89 @@ document.addEventListener('alpine:init', () => {
             }, 0);
         },
         
+        // 动态加载指定仓库的商品
+        async loadStoreProducts(storeId) {
+            if (!storeId) {
+                // 清空所有商品选择器
+                this.clearAllProductSelectors();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/mobile/stock-in/store-products?store_id=${storeId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.updateAllProductSelectors(data.products);
+                } else {
+                    console.error('加载商品失败:', data.error);
+                    this.showError('加载商品失败: ' + data.error);
+                }
+            } catch (error) {
+                console.error('请求失败:', error);
+                this.showError('网络请求失败，请重试');
+            }
+        },
+        
+        // 清空所有商品选择器
+        clearAllProductSelectors() {
+            const productSelects = document.querySelectorAll('select[name*="[id]"]');
+            productSelects.forEach(select => {
+                select.innerHTML = '<option value=""><x-lang key="mobile.stock_in.please_select_product"/></option>';
+            });
+            
+            // 清空所有商品数据
+            this.formData.products.forEach(item => {
+                item.id = '';
+                item.cost_price = 0;
+                item.total_amount = 0;
+            });
+        },
+        
+        // 更新所有商品选择器
+        updateAllProductSelectors(products) {
+            const productSelects = document.querySelectorAll('select[name*="[id]"]');
+            
+            productSelects.forEach(select => {
+                // 保存当前选中的值
+                const currentValue = select.value;
+                
+                // 清空并重新填充选项
+                select.innerHTML = '<option value=""><x-lang key="mobile.stock_in.please_select_product"/></option>';
+                
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (成本¥${product.cost_price})`;
+                    option.dataset.cost = product.cost_price;
+                    option.dataset.name = product.name;
+                    
+                    // 如果之前选中了这个商品，重新选中
+                    if (currentValue == product.id) {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                });
+            });
+        },
+        
+        showError(message) {
+            // 简单的错误提示
+            alert(message);
+        },
+        
         init() {
             // 初始化时添加一个空商品
             this.addProduct();
+            
+            // 监听仓库选择变化
+            const storeSelect = document.querySelector('select[name="store_id"]');
+            if (storeSelect) {
+                storeSelect.addEventListener('change', (e) => {
+                    this.loadStoreProducts(e.target.value);
+                });
+            }
         }
     }));
 });

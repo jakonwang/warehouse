@@ -198,15 +198,35 @@ class StockInController extends Controller
      */
     public function mobileIndex()
     {
-        // 获取商品数据
-        $products = Product::where('is_active', true)
-            ->where('type', 'standard')
-            ->orderBy('sort_order')
-            ->get();
-        $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
+        // 获取当前选择的仓库ID
+        $currentStoreId = session('current_store_id');
+        $user = auth()->user();
+        
+        // 获取可访问的仓库
+        $stores = $user->getAccessibleStores()->where('is_active', true);
+        
+        // 获取商品数据 - 根据仓库权限筛选
+        $productsQuery = Product::where('is_active', true)
+            ->where('type', 'standard');
+            
+        // 如果选择了特定仓库，只显示该仓库的商品
+        if ($currentStoreId && $currentStoreId != 0) {
+            // 获取该仓库的商品（通过库存表关联）
+            $productsQuery->whereHas('inventories', function($query) use ($currentStoreId) {
+                $query->where('store_id', $currentStoreId);
+            });
+        } elseif (!$user->isSuperAdmin()) {
+            // 非超级管理员，只显示有权限的仓库的商品
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+            $productsQuery->whereHas('inventories', function($query) use ($userStoreIds) {
+                $query->whereIn('store_id', $userStoreIds);
+            });
+        }
+        
+        $products = $productsQuery->orderBy('sort_order')->get();
         
         // 获取最近的入库记录
-        $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
+        $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
         $recentRecords = StockInRecord::with(['user', 'store', 'stockInDetails.product'])
             ->whereIn('store_id', $userStoreIds)
             ->orderBy('created_at', 'desc')
@@ -214,6 +234,38 @@ class StockInController extends Controller
             ->get();
 
         return view('mobile.stock-in.index', compact('products', 'stores', 'recentRecords'));
+    }
+
+    /**
+     * 获取指定仓库的商品列表（AJAX）
+     */
+    public function getStoreProducts(Request $request)
+    {
+        $request->validate([
+            'store_id' => 'required|exists:stores,id'
+        ]);
+
+        $storeId = $request->store_id;
+        $user = auth()->user();
+
+        // 检查用户是否有权限访问该仓库
+        if (!$user->canAccessStore($storeId)) {
+            return response()->json(['error' => '无权限访问该仓库'], 403);
+        }
+
+        // 获取该仓库的商品
+        $products = Product::where('is_active', true)
+            ->where('type', 'standard')
+            ->whereHas('inventories', function($query) use ($storeId) {
+                $query->where('store_id', $storeId);
+            })
+            ->orderBy('sort_order')
+            ->get(['id', 'name', 'code', 'cost_price']);
+
+        return response()->json([
+            'success' => true,
+            'products' => $products
+        ]);
     }
 
     /**

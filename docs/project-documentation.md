@@ -251,6 +251,43 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 #### 相关文件
 - `app/Http/Controllers/DashboardController.php` - 改进的控制器
 - `resources/views/dashboard.blade.php` - 更新的视图
+
+### 2025-08-02: 移动端入库商品筛选功能修复
+
+#### 问题描述
+移动端入库页面 (`/mobile/stock-in`) 选择商品时不是调用指定仓库能够操作的商品，而是显示所有商品。
+
+#### 问题原因
+1. 移动端入库控制器 `mobileIndex()` 方法没有根据当前选择的仓库筛选商品
+2. 商品查询没有考虑仓库权限和库存关联
+3. 缺少动态加载商品的功能
+
+#### 解决方案
+1. **修改 StockInController** (`app/Http/Controllers/StockInController.php`)
+   - 更新 `mobileIndex()` 方法，根据当前仓库筛选商品
+   - 添加 `getStoreProducts()` API方法，支持动态加载指定仓库的商品
+   - 修复Product模型关系名称（`inventory` → `inventories`）
+   - 添加权限检查，确保用户只能访问有权限的仓库商品
+
+2. **更新路由配置** (`routes/web.php`)
+   - 添加 `/mobile/stock-in/store-products` API路由
+
+3. **改进前端交互** (`resources/views/mobile/stock-in/index.blade.php`)
+   - 添加动态加载商品功能
+   - 当用户选择仓库时，自动更新商品列表
+   - 添加错误处理和用户提示
+
+#### 修复结果
+- ✅ 移动端入库页面现在只显示当前仓库的商品
+- ✅ 支持动态切换仓库时更新商品列表
+- ✅ 添加了权限控制，确保数据安全
+- ✅ 改进了用户体验，商品选择更加精准
+- ✅ 修复了Product模型关系名称错误
+
+#### 相关文件
+- `app/Http/Controllers/StockInController.php` - 修复的控制器
+- `routes/web.php` - 新增的API路由
+- `resources/views/mobile/stock-in/index.blade.php` - 改进的视图
 系统在创建或更新分类时出现数据库完整性约束错误：
 ```
 SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'categories_slug_unique'

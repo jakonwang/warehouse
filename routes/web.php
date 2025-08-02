@@ -280,6 +280,7 @@ Route::middleware(['auth'])->prefix('mobile')->name('mobile.')->group(function (
     // 入库管理
     Route::get('/stock-in', [StockInController::class, 'mobileIndex'])->name('stock-in.index');
     Route::post('/stock-in', [StockInController::class, 'mobileStore'])->name('stock-in.store');
+    Route::get('/stock-in/store-products', [StockInController::class, 'getStoreProducts'])->name('stock-in.store-products');
     
     // 退货管理
     Route::get('/returns', [ReturnController::class, 'mobileIndex'])->name('returns.index');
