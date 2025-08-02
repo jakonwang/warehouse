@@ -69,6 +69,65 @@
 - **阴影**：多层次阴影系统
 - **间距**：基于4px网格系统
 
+## 0. 问题修复记录
+
+### 0.1 分类表 slug 字段重复值问题修复 (2025-08-02)
+
+#### 问题描述
+系统在创建或更新分类时出现数据库完整性约束错误：
+```
+SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'categories_slug_unique'
+```
+
+#### 问题原因
+1. 分类表中的 `slug` 字段存在空值，违反了唯一性约束
+2. Category 模型的 `boot()` 方法中，当分类名称为空或特殊字符时，`Str::slug()` 可能返回空字符串
+3. 没有对生成的 slug 进行唯一性检查和空值处理
+
+#### 解决方案
+1. **创建修复脚本** (`scripts/fix_categories_slug.php`)
+   - 查找所有空的 slug 值
+   - 为每个空 slug 生成唯一的 slug
+   - 处理重复 slug 的情况
+
+2. **改进 Category 模型** (`app/Models/Category.php`)
+   - 添加 `generateUniqueSlug()` 方法
+   - 确保生成的 slug 不为空
+   - 处理 slug 重复的情况
+   - 在创建和更新时自动生成唯一 slug
+
+3. **数据库迁移** (`2025_08_02_121714_ensure_categories_slug_not_null.php`)
+   - 修复现有的空 slug 值
+   - 修改字段约束，确保 slug 字段不允许空值
+
+#### 修复结果
+- ✅ 成功修复了 1 个空的 slug 值
+- ✅ 改进了 slug 生成逻辑，防止未来出现类似问题
+- ✅ 添加了数据库约束，确保数据完整性
+- ✅ 创建了测试脚本验证修复效果
+
+#### 相关文件
+- `scripts/fix_categories_slug.php` - 修复脚本
+- `scripts/test_categories.php` - 测试脚本
+- `app/Models/Category.php` - 改进的模型
+- `database/migrations/2025_08_02_121714_ensure_categories_slug_not_null.php` - 数据库迁移
+
+#### 使用说明
+1. **运行修复脚本**（如果遇到类似问题）：
+   ```bash
+   php scripts/fix_categories_slug.php
+   ```
+
+2. **运行测试脚本**（验证功能正常）：
+   ```bash
+   php scripts/test_categories.php
+   ```
+
+3. **应用数据库迁移**：
+   ```bash
+   php artisan migrate
+   ```
+
 ## 1. 系统基础功能
 
 ### 1.1 用户管理系统

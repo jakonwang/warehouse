@@ -74,14 +74,48 @@ class Category extends Model
 
         static::creating(function ($category) {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->name);
+                $category->slug = self::generateUniqueSlug($category->name);
             }
         });
 
         static::updating(function ($category) {
             if ($category->isDirty('name') && !$category->isDirty('slug')) {
-                $category->slug = Str::slug($category->name);
+                $category->slug = self::generateUniqueSlug($category->name, $category->id);
             }
         });
+    }
+
+    /**
+     * 生成唯一的 slug
+     */
+    protected static function generateUniqueSlug($name, $excludeId = null)
+    {
+        $baseSlug = Str::slug($name);
+        
+        // 如果生成的 slug 为空，使用时间戳作为默认值
+        if (empty($baseSlug)) {
+            $baseSlug = 'category-' . time();
+        }
+        
+        $slug = $baseSlug;
+        $counter = 1;
+        
+        // 检查 slug 是否已存在
+        $query = static::where('slug', $slug);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        
+        while ($query->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+            
+            $query = static::where('slug', $slug);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
+        }
+        
+        return $slug;
     }
 } 
