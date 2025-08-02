@@ -165,6 +165,18 @@
             <div class="h-64">
                 <canvas id="dailyTrendChart"></canvas>
             </div>
+            <!-- 调试信息 -->
+            @if(config('app.debug'))
+            <div class="mt-4 p-3 bg-gray-100 rounded text-xs">
+                <strong>调试信息：</strong><br>
+                每日趋势数据条数: {{ count($dailyTrend) }}<br>
+                @if(count($dailyTrend) > 0)
+                    第一条数据: {{ json_encode($dailyTrend->first()) }}
+                @else
+                    无数据
+                @endif
+            </div>
+            @endif
         </div>
 
         <!-- 预测图表 -->
@@ -199,6 +211,8 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">销售额</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">平均单价</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日均销量</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">建议7天备货</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">建议15天备货</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                     </tr>
                 </thead>
@@ -272,6 +286,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">{{ $item->avg_daily_sales }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-blue-600">{{ number_format($item->suggested_7day_stock) }}</div>
+                            <div class="text-xs text-gray-500">日均×7×1.5</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-green-600">{{ number_format($item->suggested_15day_stock) }}</div>
+                            <div class="text-xs text-gray-500">日均×15×1.5</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button @click="viewProductDetail({{ $item->product_id }})" class="text-purple-600 hover:text-purple-900 mr-3">
@@ -431,6 +453,7 @@ function productSalesTrend(config) {
 
         initDailyTrendChart() {
             if (!this.dailyTrend || this.dailyTrend.length === 0) {
+                console.log('No daily trend data available');
                 return;
             }
 
@@ -438,13 +461,14 @@ function productSalesTrend(config) {
             if (!ctx) return;
 
             try {
+                console.log('Daily trend data:', this.dailyTrend);
                 this.dailyChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: this.dailyTrend.map(item => item.formatted_date || item.sale_date),
                         datasets: [{
                             label: '每日销量',
-                            data: this.dailyTrend.map(item => item.quantity),
+                            data: this.dailyTrend.map(item => item.daily_quantity || 0),
                             borderColor: 'rgb(147, 51, 234)',
                             backgroundColor: 'rgba(147, 51, 234, 0.1)',
                             tension: 0.4,

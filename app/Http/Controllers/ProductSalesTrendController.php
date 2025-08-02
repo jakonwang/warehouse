@@ -57,13 +57,16 @@ class ProductSalesTrendController extends Controller
         // 获取产品列表（用于筛选）
         $products = $this->getProductsForFilter($user, $storeId);
         
-        // 简化调试信息
+        // 详细调试信息
         \Log::info('ProductSalesTrend:', [
             'startDate' => $startDate,
             'endDate' => $endDate,
             'storeId' => $storeId,
             'trendData_count' => $trendData->count(),
-            'dailyTrend_count' => $dailyTrend->count()
+            'dailyTrend_count' => $dailyTrend->count(),
+            'dailyTrend_sample' => $dailyTrend->take(3)->toArray(),
+            'user_id' => $user->id,
+            'is_super_admin' => $isSuperAdmin
         ]);
         
         return view('statistics.product-sales-trend', compact(
@@ -183,6 +186,10 @@ class ProductSalesTrendController extends Controller
             $item->avg_daily_sales = round($item->total_quantity / $activeDays, 2);
             $item->sales_frequency = $item->active_days > 0 ? round($item->active_days / (Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1) * 100, 1) : 0;
             
+            // 计算建议备货量：日均销量 * 天数 * 1.5
+            $item->suggested_7day_stock = round($item->avg_daily_sales * 7 * 1.5, 0);
+            $item->suggested_15day_stock = round($item->avg_daily_sales * 15 * 1.5, 0);
+            
             // 计算趋势（与上一周期对比）
             $item->trend = $this->calculateTrend($item->product_id, $startDate, $endDate);
             
@@ -197,6 +204,9 @@ class ProductSalesTrendController extends Controller
      */
     private function getDailySalesTrend($query, $startDate, $endDate)
     {
+        $user = auth()->user();
+        $storeId = session('current_store_id');
+        
         // 获取标准商品销售数据
         $standardData = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
             ->join('products', 'sale_details.product_id', '=', 'products.id')
@@ -204,15 +214,7 @@ class ProductSalesTrendController extends Controller
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay()
             ])
-            ->where('products.type', 'standard')
-            ->select(
-                DB::raw('DATE(sales.created_at) as sale_date'),
-                DB::raw('SUM(sale_details.quantity) as daily_quantity'),
-                DB::raw('SUM(sale_details.total) as daily_amount'),
-                DB::raw('COUNT(DISTINCT sale_details.product_id) as product_types')
-            )
-            ->groupBy('sale_date')
-            ->get();
+            ->where('products.type', 'standard');
 
         // 获取盲袋发货数据
         $blindBagData = DB::table('blind_bag_deliveries')
@@ -222,22 +224,51 @@ class ProductSalesTrendController extends Controller
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay()
             ])
-            ->where('products.type', 'standard')
-            ->select(
-                DB::raw('DATE(sales.created_at) as sale_date'),
-                DB::raw('SUM(blind_bag_deliveries.quantity) as daily_quantity'),
-                DB::raw('SUM(blind_bag_deliveries.total_cost) as daily_amount'),
-                DB::raw('COUNT(DISTINCT blind_bag_deliveries.delivery_product_id) as product_types')
-            )
-            ->groupBy('sale_date')
-            ->get();
+            ->where('products.type', 'standard');
+
+        // 权限控制
+        if (!$user->isSuperAdmin()) {
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+            $standardData->whereIn('sales.store_id', $userStoreIds);
+            $blindBagData->whereIn('sales.store_id', $userStoreIds);
+        }
+
+        // 仓库筛选
+        if ($storeId && $storeId != 0) {
+            $standardData->where('sales.store_id', $storeId);
+            $blindBagData->where('sales.store_id', $storeId);
+        }
+
+        // 执行查询
+        $standardData = $standardData->select(
+            DB::raw('DATE(sales.created_at) as sale_date'),
+            DB::raw('SUM(sale_details.quantity) as daily_quantity'),
+            DB::raw('SUM(sale_details.total) as daily_amount'),
+            DB::raw('COUNT(DISTINCT sale_details.product_id) as product_types')
+        )
+        ->groupBy('sale_date')
+        ->get();
+
+        $blindBagData = $blindBagData->select(
+            DB::raw('DATE(sales.created_at) as sale_date'),
+            DB::raw('SUM(blind_bag_deliveries.quantity) as daily_quantity'),
+            DB::raw('SUM(blind_bag_deliveries.total_cost) as daily_amount'),
+            DB::raw('COUNT(DISTINCT blind_bag_deliveries.delivery_product_id) as product_types')
+        )
+        ->groupBy('sale_date')
+        ->get();
 
         // 合并数据
         $combinedData = collect();
         
         // 处理标准商品销售数据
         foreach ($standardData as $item) {
-            $combinedData->put($item->sale_date, $item);
+            $combinedData->put($item->sale_date, (object) [
+                'sale_date' => $item->sale_date,
+                'daily_quantity' => $item->daily_quantity,
+                'daily_amount' => $item->daily_amount,
+                'product_types' => $item->product_types
+            ]);
         }
         
         // 处理盲袋发货数据，累加到现有数据或创建新记录
@@ -250,7 +281,12 @@ class ProductSalesTrendController extends Controller
                 $existing->product_types += $item->product_types;
             } else {
                 // 创建新记录
-                $combinedData->put($item->sale_date, $item);
+                $combinedData->put($item->sale_date, (object) [
+                    'sale_date' => $item->sale_date,
+                    'daily_quantity' => $item->daily_quantity,
+                    'daily_amount' => $item->daily_amount,
+                    'product_types' => $item->product_types
+                ]);
             }
         }
 
@@ -432,7 +468,7 @@ class ProductSalesTrendController extends Controller
             // 写入表头
             fputcsv($handle, [
                 '产品ID', '产品名称', '产品编码', '总销量', '总金额', '订单数',
-                '平均单价', '平均日销量', '销售频率(%)', '趋势(%)'
+                '平均单价', '平均日销量', '建议7天备货量', '建议15天备货量', '销售频率(%)', '趋势(%)'
             ]);
             
             // 写入数据
@@ -446,6 +482,8 @@ class ProductSalesTrendController extends Controller
                     $item->order_count,
                     number_format($item->avg_price, 2),
                     $item->avg_daily_sales,
+                    $item->suggested_7day_stock,
+                    $item->suggested_15day_stock,
                     $item->sales_frequency . '%',
                     ($item->trend > 0 ? '+' : '') . $item->trend . '%'
                 ]);
