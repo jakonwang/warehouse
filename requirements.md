@@ -113,20 +113,44 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 - `database/migrations/2025_08_02_121714_ensure_categories_slug_not_null.php` - 数据库迁移
 
 #### 使用说明
+
+##### 本地环境（Windows）
 1. **运行修复脚本**（如果遇到类似问题）：
    ```bash
    php scripts/fix_categories_slug.php
    ```
 
-2. **运行测试脚本**（验证功能正常）：
-   ```bash
-   php scripts/test_categories.php
-   ```
-
-3. **应用数据库迁移**：
+2. **应用数据库迁移**：
    ```bash
    php artisan migrate
    ```
+
+##### 线上环境（Linux）
+1. **使用自动化脚本**（推荐）：
+   ```bash
+   # 上传脚本到服务器
+   scp deploy_scripts/fix_categories_slug_online.sh user@server:/tmp/
+   
+   # 设置环境变量并执行
+   export DB_USERNAME="your_db_user"
+   export DB_PASSWORD="your_db_password"
+   export DB_DATABASE="your_db_name"
+   chmod +x /tmp/fix_categories_slug_online.sh
+   /tmp/fix_categories_slug_online.sh
+   ```
+
+2. **使用快速修复脚本**（紧急情况）：
+   ```bash
+   chmod +x deploy_scripts/quick_fix_online.sh
+   ./deploy_scripts/quick_fix_online.sh
+   ```
+
+3. **直接数据库修复**（仅修复数据）：
+   ```bash
+   mysql -u${DB_USER} -p${DB_PASS} ${DB_NAME} < deploy_scripts/fix_categories_slug.sql
+   ```
+
+4. **详细修复指南**：参考 `docs/online-fix-guide.md`
 
 ## 1. 系统基础功能
 
