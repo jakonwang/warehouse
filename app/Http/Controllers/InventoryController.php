@@ -672,6 +672,9 @@ class InventoryController extends Controller
     public function export(Request $request)
     {
         try {
+            $currentStoreId = session('current_store_id');
+            $user = auth()->user();
+            
             // 获取筛选参数
             $keyword = $request->input('keyword');
             $status = $request->input('status');
@@ -689,7 +692,16 @@ class InventoryController extends Controller
                     'products.code as product_code',
                     'products.type as product_type',
                     'stores.name as store_name'
-                );
+                )
+                ->where('products.type', 'standard'); // 只导出标准商品
+
+            // 应用仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $query->where('inventory.store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $query->whereIn('inventory.store_id', $userStoreIds);
+            }
 
             // 应用筛选条件
             if ($keyword) {
@@ -728,6 +740,10 @@ class InventoryController extends Controller
             // 获取数据
             $data = $query->orderBy('inventory.quantity', 'asc')->get();
 
+            if ($data->isEmpty()) {
+                return back()->with('warning', '暂无数据可导出');
+            }
+
             // 生成CSV内容
             $csvContent = $this->generateInventoryCSV($data);
 
@@ -741,6 +757,7 @@ class InventoryController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('库存导出失败: ' . $e->getMessage());
             return back()->with('error', '导出失败：' . $e->getMessage());
         }
     }

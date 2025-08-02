@@ -168,6 +168,38 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 #### 相关文件
 - `app/Http/Controllers/InventoryController.php` - 改进的控制器
 - `resources/views/inventory/index.blade.php` - 更新的视图
+
+### 2025-08-02: 库存导出功能404错误修复
+
+#### 问题描述
+访问 `/inventory/export` 路径时出现404错误，导出功能无法正常使用。
+
+#### 问题原因
+1. 路由配置中，`Route::get('{inventory}', [InventoryController::class, 'show'])->name('inventory.show');` 在 `Route::get('/export', [InventoryController::class, 'export'])->name('inventory.export');` 之前
+2. Laravel路由匹配顺序导致 `/inventory/export` 被匹配为 `{inventory}` 参数，而不是导出功能
+3. 导出方法缺少仓库权限验证逻辑
+
+#### 解决方案
+1. **修复路由顺序** (`routes/web.php`)
+   - 将导出路由移到参数路由之前
+   - 确保具体路径优先于通配符路径
+
+2. **完善导出方法** (`app/Http/Controllers/InventoryController.php`)
+   - 添加仓库权限验证逻辑
+   - 只导出标准商品类型
+   - 添加空数据检查和错误处理
+   - 改进日志记录
+
+#### 修复结果
+- ✅ 导出路由现在可以正常访问
+- ✅ 导出功能包含完整的权限验证
+- ✅ 支持筛选条件导出
+- ✅ 生成标准的CSV格式文件
+- ✅ 包含完整的错误处理
+
+#### 相关文件
+- `routes/web.php` - 修复的路由配置
+- `app/Http/Controllers/InventoryController.php` - 完善的导出方法
 系统在创建或更新分类时出现数据库完整性约束错误：
 ```
 SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'categories_slug_unique'

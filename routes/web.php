@@ -98,13 +98,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('create', [InventoryController::class, 'create'])->name('inventory.create');
         Route::post('/', [InventoryController::class, 'store'])->name('inventory.store');
         Route::post('batch-operation', [InventoryController::class, 'batchOperation'])->name('inventory.batch-operation');
+        Route::get('export', [InventoryController::class, 'export'])->name('inventory.export');
         Route::post('{inventory}/check', [InventoryController::class, 'singleCheck'])->name('inventory.single-check');
         Route::get('{inventory}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
         Route::put('{inventory}', [InventoryController::class, 'update'])->name('inventory.update');
         Route::delete('{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
         Route::get('{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
         Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
-        Route::get('/export', [InventoryController::class, 'export'])->name('inventory.export');
     });
 
     // Sales Management Routes
