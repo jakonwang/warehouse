@@ -80,11 +80,12 @@ $customRange = request('range', '');
             </div>
             <div class="mt-4 lg:mt-0 flex items-center space-x-3">
                 <form id="periodForm" method="get" action="/dashboard" class="inline-flex items-center space-x-3">
-                    <select name="period" id="periodSelect" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="document.getElementById('periodForm').submit()">
-                        <option value="today" {{ request('period', 'today') == 'today' ? 'selected' : '' }}><x-lang key="dashboard.today"/></option>
-                        <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}><x-lang key="dashboard.week"/></option>
-                        <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}><x-lang key="dashboard.month"/></option>
-                        <option value="quarter" {{ request('period') == 'quarter' ? 'selected' : '' }}><x-lang key="dashboard.quarter"/></option>
+                    <select name="period" id="periodSelect" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="handlePeriodChange()">
+                        <option value="today" {{ request('period', 'today') == 'today' ? 'selected' : '' }}>今日</option>
+                        <option value="yesterday" {{ request('period') == 'yesterday' ? 'selected' : '' }}>昨日</option>
+                        <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>本周</option>
+                        <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>本月</option>
+                        <option value="quarter" {{ request('period') == 'quarter' ? 'selected' : '' }}>本季度</option>
                         <option value="custom" {{ request('period') == 'custom' ? 'selected' : '' }}>自定义</option>
                     </select>
                     <input id="customRangeInput" name="range" type="text" value="{{ request('range') }}" placeholder="选择日期区间" class="ml-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64" style="display: none;" readonly />
@@ -107,8 +108,8 @@ $customRange = request('range', '');
                     </div>
                     <span class="text-green-300 text-sm font-medium"><x-lang key="dashboard.today"/></span>
                 </div>
-                <h3 class="text-2xl font-bold">¥{{ number_format($todaySales->total_amount ?? 0, 2) }}</h3>
-                <p class="text-blue-100 text-sm"><x-lang key="dashboard.total_sales"/></p>
+                <h3 class="text-2xl font-bold">¥{{ number_format($salesData->total_amount ?? 0, 2) }}</h3>
+                <p class="text-blue-100 text-sm">{{ $dateRange['label'] ?? '今日' }}销售额</p>
             </div>
         </div>
 
@@ -122,8 +123,8 @@ $customRange = request('range', '');
                     </div>
                     <span class="text-green-300 text-sm font-medium"><x-lang key="dashboard.total_orders"/></span>
                 </div>
-                <h3 class="text-2xl font-bold">{{ $todaySales->total_sales ?? 0 }}</h3>
-                <p class="text-green-100 text-sm"><x-lang key="dashboard.total_orders"/></p>
+                <h3 class="text-2xl font-bold">{{ $salesData->total_sales ?? 0 }}</h3>
+                <p class="text-green-100 text-sm">{{ $dateRange['label'] ?? '今日' }}订单数</p>
             </div>
         </div>
 
@@ -138,8 +139,8 @@ $customRange = request('range', '');
                     </div>
                     <span class="text-green-300 text-sm font-medium"><x-lang key="dashboard.total_profit"/></span>
                 </div>
-                <h3 class="text-2xl font-bold">¥{{ number_format($todaySales->total_profit ?? 0, 2) }}</h3>
-                <p class="text-purple-100 text-sm"><x-lang key="dashboard.total_profit"/></p>
+                <h3 class="text-2xl font-bold">¥{{ number_format($salesData->total_profit ?? 0, 2) }}</h3>
+                <p class="text-purple-100 text-sm">{{ $dateRange['label'] ?? '今日' }}利润</p>
             </div>
         </div>
         @endif
@@ -155,8 +156,8 @@ $customRange = request('range', '');
                     </div>
                     <span class="text-green-300 text-sm font-medium"><x-lang key="dashboard.avg_profit_rate"/></span>
                 </div>
-                <h3 class="text-2xl font-bold">{{ number_format($todaySales->avg_profit_rate ?? 0, 1) }}%</h3>
-                <p class="text-orange-100 text-sm"><x-lang key="dashboard.avg_profit_rate"/></p>
+                <h3 class="text-2xl font-bold">{{ number_format($salesData->avg_profit_rate ?? 0, 1) }}%</h3>
+                <p class="text-orange-100 text-sm">{{ $dateRange['label'] ?? '今日' }}利润率</p>
             </div>
         </div>
         @endif
@@ -521,6 +522,34 @@ function renderSalesTrendChart() {
     window.addEventListener('resize', function() {
         myChart.resize();
     });
+}
+
+// 处理时间选择变化
+function handlePeriodChange() {
+    var select = document.getElementById('periodSelect');
+    var customInput = document.getElementById('customRangeInput');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = '';
+        // 初始化日期选择器
+        if (!customInput.hasAttribute('data-flatpickr-initialized')) {
+            flatpickr(customInput, {
+                mode: 'range',
+                dateFormat: 'Y-m-d',
+                onChange: function(selectedDates, dateStr, instance) {
+                    // 当日期选择改变时，自动提交表单
+                    if (dateStr) {
+                        document.getElementById('periodForm').submit();
+                    }
+                }
+            });
+            customInput.setAttribute('data-flatpickr-initialized', 'true');
+        }
+    } else {
+        customInput.style.display = 'none';
+        // 非自定义选项直接提交表单
+        document.getElementById('periodForm').submit();
+    }
 }
 
 // 控制自定义区间输入框显示和日期选择器

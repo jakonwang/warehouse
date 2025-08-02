@@ -18,52 +18,139 @@ class DashboardController extends Controller
     /**
      * 显示仪表盘首页
      */
-    public function index()
+    public function index(Request $request)
     {
+        // 获取时间筛选参数
+        $period = $request->input('period', 'today');
+        $customRange = $request->input('range');
+        
+        // 计算时间范围
+        $dateRange = $this->calculateDateRange($period, $customRange);
+        
         // 检查是否有强制刷新参数
         $forceRefresh = request('refresh') === 'true';
         
         // 使用缓存获取仪表盘数据，缓存时间减少到2分钟
-        $cacheKey = 'dashboard_data_' . auth()->id();
+        $cacheKey = 'dashboard_data_' . auth()->id() . '_' . $period . '_' . ($customRange ?? 'default');
         
         if ($forceRefresh) {
             Cache::forget($cacheKey);
         }
         
-        $dashboardData = Cache::remember($cacheKey, 120, function () {
-            return $this->getDashboardData();
+        $dashboardData = Cache::remember($cacheKey, 120, function () use ($dateRange) {
+            return $this->getDashboardData($dateRange);
         });
+
+        // 添加时间范围信息到视图
+        $dashboardData['dateRange'] = $dateRange;
+        $dashboardData['currentPeriod'] = $period;
+        $dashboardData['customRange'] = $customRange;
 
         return view('dashboard', $dashboardData);
     }
 
     /**
+     * 计算时间范围
+     */
+    private function calculateDateRange($period, $customRange = null)
+    {
+        $now = now();
+        
+        switch ($period) {
+            case 'today':
+                return [
+                    'start' => $now->copy()->startOfDay(),
+                    'end' => $now->copy()->endOfDay(),
+                    'label' => '今日'
+                ];
+                
+            case 'yesterday':
+                return [
+                    'start' => $now->copy()->subDay()->startOfDay(),
+                    'end' => $now->copy()->subDay()->endOfDay(),
+                    'label' => '昨日'
+                ];
+                
+            case 'week':
+                return [
+                    'start' => $now->copy()->startOfWeek(),
+                    'end' => $now->copy()->endOfWeek(),
+                    'label' => '本周'
+                ];
+                
+            case 'month':
+                return [
+                    'start' => $now->copy()->startOfMonth(),
+                    'end' => $now->copy()->endOfMonth(),
+                    'label' => '本月'
+                ];
+                
+            case 'quarter':
+                return [
+                    'start' => $now->copy()->startOfQuarter(),
+                    'end' => $now->copy()->endOfQuarter(),
+                    'label' => '本季度'
+                ];
+                
+            case 'custom':
+                if ($customRange) {
+                    $dates = explode(' - ', $customRange);
+                    if (count($dates) === 2) {
+                        return [
+                            'start' => Carbon::parse(trim($dates[0]))->startOfDay(),
+                            'end' => Carbon::parse(trim($dates[1]))->endOfDay(),
+                            'label' => '自定义'
+                        ];
+                    }
+                }
+                // 如果自定义日期解析失败，默认返回今天
+                return [
+                    'start' => $now->copy()->startOfDay(),
+                    'end' => $now->copy()->endOfDay(),
+                    'label' => '今日'
+                ];
+                
+            default:
+                return [
+                    'start' => $now->copy()->startOfDay(),
+                    'end' => $now->copy()->endOfDay(),
+                    'label' => '今日'
+                ];
+        }
+    }
+
+    /**
      * 获取仪表盘数据
      */
-    private function getDashboardData()
+    private function getDashboardData($dateRange = null)
     {
         try {
             $user = auth()->user();
             $currentStoreId = session('current_store_id');
             $isSuperAdmin = $user->isSuperAdmin();
             
-            // 获取今日销售数据
-            $todaySales = $this->getTodaySalesData();
+            // 如果没有提供时间范围，使用默认的今天
+            if (!$dateRange) {
+                $dateRange = $this->calculateDateRange('today');
+            }
+            
+            // 获取销售数据（使用时间范围）
+            $salesData = $this->getSalesData($dateRange);
 
             // 获取库存预警数据
             $lowStockAlerts = $this->getLowStockAlerts();
 
-            // 获取热销商品
-            $topProducts = $this->getTopProducts();
+            // 获取热销商品（使用时间范围）
+            $topProducts = $this->getTopProducts($dateRange);
 
-            // 获取仓库销售排行
-            $storeRanking = $this->getStoreRanking();
+            // 获取仓库销售排行（使用时间范围）
+            $storeRanking = $this->getStoreRanking($dateRange);
 
             // 获取最近活动
             $recentActivities = $this->getRecentActivities();
 
-            // 获取销售趋势数据
-            $salesTrendData = $this->getSalesTrendData();
+            // 获取销售趋势数据（使用时间范围）
+            $salesTrendData = $this->getSalesTrendData($dateRange);
             
             // 调试信息
             \Log::info('销售趋势数据: ' . json_encode($salesTrendData));
@@ -75,7 +162,7 @@ class DashboardController extends Controller
             }
 
             return compact(
-                'todaySales',
+                'salesData',
                 'lowStockAlerts', 
                 'topProducts',
                 'storeRanking',
@@ -99,7 +186,7 @@ class DashboardController extends Controller
             
             // 返回默认数据
             return [
-                'todaySales' => (object)[
+                'salesData' => (object)[
                     'total_sales' => 0,
                     'total_amount' => 0,
                     'total_profit' => 0,
@@ -121,19 +208,23 @@ class DashboardController extends Controller
     }
 
     /**
-     * 获取今日销售数据
+     * 获取销售数据（基于时间范围）
      */
-    private function getTodaySalesData()
+    private function getSalesData($dateRange)
     {
         $currentStoreId = session('current_store_id');
         $user = auth()->user();
-        $query = DB::table('sales')->whereDate('created_at', today());
+        
+        $query = DB::table('sales')
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
+            
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
             $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('store_id', $userStoreIds);
         }
+        
         $result = $query->selectRaw('
             COUNT(*) as total_sales,
             COALESCE(SUM(total_amount), 0) as total_amount,
@@ -193,12 +284,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * 获取热销商品
+     * 获取热销商品（基于时间范围）
      */
-    private function getTopProducts()
+    private function getTopProducts($dateRange = null)
     {
         $currentStoreId = session('current_store_id');
         $user = auth()->user();
+        
         $query = DB::table('products')
             ->leftJoin('sale_details', 'products.id', '=', 'sale_details.product_id')
             ->leftJoin('sales', 'sale_details.sale_id', '=', 'sales.id')
@@ -208,12 +300,19 @@ class DashboardController extends Controller
             )
             ->where('products.is_active', true)
             ->where('products.type', 'standard');
+            
+        // 应用时间范围筛选
+        if ($dateRange) {
+            $query->whereBetween('sales.created_at', [$dateRange['start'], $dateRange['end']]);
+        }
+        
         if ($currentStoreId && $currentStoreId != 0) {
             $query->where('sales.store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
             $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
             $query->whereIn('sales.store_id', $userStoreIds);
         }
+        
         return $query->groupBy('products.id', 'products.name', 'products.code', 'products.description', 'products.price', 'products.cost_price', 'products.image', 'products.type', 'products.is_active', 'products.created_at', 'products.updated_at')
             ->orderBy('total_quantity', 'desc')
             ->limit(5)
@@ -296,19 +395,29 @@ class DashboardController extends Controller
     }
 
     /**
-     * 获取销售趋势数据
+     * 获取销售趋势数据（基于时间范围）
      */
-    private function getSalesTrendData()
+    private function getSalesTrendData($dateRange = null)
     {
         try {
             $currentStoreId = session('current_store_id');
             $user = auth()->user();
             
+            // 如果没有提供时间范围，默认使用最近7天
+            if (!$dateRange) {
+                $dateRange = [
+                    'start' => now()->subDays(7),
+                    'end' => now(),
+                    'label' => '最近7天'
+                ];
+            }
+            
             // 调试信息
             \Log::info('开始获取销售趋势数据', [
                 'currentStoreId' => $currentStoreId,
                 'isSuperAdmin' => $user->isSuperAdmin(),
-                'userId' => $user->id
+                'userId' => $user->id,
+                'dateRange' => $dateRange
             ]);
             
             $query = DB::table('sales')
@@ -317,7 +426,7 @@ class DashboardController extends Controller
                     DB::raw('COUNT(*) as count'),
                     DB::raw('COALESCE(SUM(total_amount), 0) as total_amount')
                 )
-                ->whereBetween('created_at', [now()->subDays(7), now()]);
+                ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
                 
             if ($currentStoreId && $currentStoreId != 0) {
                 $query->where('store_id', $currentStoreId);

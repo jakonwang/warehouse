@@ -200,6 +200,52 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 #### 相关文件
 - `routes/web.php` - 修复的路由配置
 - `app/Http/Controllers/InventoryController.php` - 完善的导出方法
+
+### 2025-08-02: 仪表板时间筛选功能修复
+
+#### 问题描述
+仪表板页面切换数据没有任何变化，显示的都是今天的数据，并且不支持自定义日期的时间查询，缺少"昨天"选项。
+
+#### 问题原因
+1. 仪表板控制器没有处理时间筛选参数
+2. 所有数据查询都硬编码为今天或最近7天
+3. 缺少"昨天"时间选项
+4. 自定义日期选择器功能不完整
+
+#### 解决方案
+1. **修改 DashboardController** (`app/Http/Controllers/DashboardController.php`)
+   - 添加 `calculateDateRange()` 方法计算时间范围
+   - 修改 `index()` 方法处理时间筛选参数
+   - 更新所有数据查询方法支持时间范围参数
+   - 添加"昨天"时间选项
+   - 改进缓存机制，按时间范围分别缓存
+
+2. **更新视图文件** (`resources/views/dashboard.blade.php`)
+   - 添加"昨天"选项到时间选择器
+   - 修复自定义日期选择器功能
+   - 更新数据显示，使用动态时间范围标签
+   - 改进JavaScript处理时间选择变化
+
+3. **支持的时间范围**
+   - 今日：当天00:00:00到23:59:59
+   - 昨日：昨天00:00:00到23:59:59
+   - 本周：本周开始到结束
+   - 本月：本月开始到结束
+   - 本季度：本季度开始到结束
+   - 自定义：用户选择的日期范围
+
+#### 修复结果
+- ✅ 仪表板数据现在根据选择的时间范围动态变化
+- ✅ 添加了"昨天"时间选项
+- ✅ 支持自定义日期范围查询
+- ✅ 所有统计数据（销售额、订单数、利润等）都基于选择的时间范围
+- ✅ 热销商品和仓库排行也支持时间筛选
+- ✅ 销售趋势图表基于选择的时间范围显示
+- ✅ 改进了缓存机制，避免数据混淆
+
+#### 相关文件
+- `app/Http/Controllers/DashboardController.php` - 改进的控制器
+- `resources/views/dashboard.blade.php` - 更新的视图
 系统在创建或更新分类时出现数据库完整性约束错误：
 ```
 SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'categories_slug_unique'
