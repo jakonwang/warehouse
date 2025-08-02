@@ -30,22 +30,58 @@ class InventoryController extends Controller
     {
         $currentStoreId = session('current_store_id');
         $user = auth()->user();
-        $query = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
+        
+        // 构建基础查询
+        $baseQuery = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
             ->whereHas('product', function($query) {
                 $query->where('type', 'standard');
             });
+            
+        // 应用仓库权限
         if ($currentStoreId && $currentStoreId != 0) {
-            $query->where('store_id', $currentStoreId);
+            $baseQuery->where('store_id', $currentStoreId);
         } elseif (!$user->isSuperAdmin()) {
             $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
-            $query->whereIn('store_id', $userStoreIds);
+            $baseQuery->whereIn('store_id', $userStoreIds);
         }
-        $inventory = $query->orderBy('product_id')->paginate(10);
+        
+        // 获取分页数据（用于显示列表）
+        $inventory = $baseQuery->orderBy('product_id')->paginate(10);
+        
+        // 获取统计数据（基于全部数据，不分页）
+        $statsQuery = Inventory::with(['product:id,cost_price'])
+            ->whereHas('product', function($query) {
+                $query->where('type', 'standard');
+            });
+            
+        // 应用相同的仓库权限
+        if ($currentStoreId && $currentStoreId != 0) {
+            $statsQuery->where('store_id', $currentStoreId);
+        } elseif (!$user->isSuperAdmin()) {
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+            $statsQuery->whereIn('store_id', $userStoreIds);
+        }
+        
+        $statsData = $statsQuery->get();
+        
+        // 计算统计数据
+        $stats = [
+            'total_quantity' => $statsData->sum('quantity'),
+            'total_value' => $statsData->sum(function($item) {
+                return $item->quantity * ($item->product->cost_price ?? 0);
+            }),
+            'low_stock_count' => $statsData->filter(function($item) {
+                return $item->quantity <= ($item->min_quantity ?? 0) && $item->quantity > 0;
+            })->count(),
+            'out_of_stock_count' => $statsData->filter(function($item) {
+                return $item->quantity == 0;
+            })->count(),
+        ];
         
         // 计算库存周转率（基于过去30天数据）
         $turnoverRate = $this->calculateTurnoverRate($currentStoreId, $user);
         
-        return view('inventory.index', compact('inventory', 'turnoverRate'));
+        return view('inventory.index', compact('inventory', 'turnoverRate', 'stats'));
     }
     
     /**

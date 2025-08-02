@@ -136,6 +136,74 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 - `app/Models/Category.php` - 改进的模型
 - `database/migrations/2025_08_02_121714_ensure_categories_slug_not_null.php` - 数据库迁移
 
+### 2025-08-02: 库存统计数据计算问题修复
+
+#### 问题描述
+库存管理页面中的统计数据（库存总数、库存总价值、库存预警、周转率）计算不准确，只计算了分页后的数据，而不是全部数据。
+
+#### 问题原因
+1. 库存控制器中的 `index()` 方法使用 `paginate()` 获取数据
+2. 视图中的统计数据直接基于分页后的 `$inventory` 集合计算
+3. 导致统计数据只反映当前页面的数据，而不是全部库存数据
+
+#### 解决方案
+1. **修改 InventoryController** (`app/Http/Controllers/InventoryController.php`)
+   - 分离分页数据和统计数据查询
+   - 使用 `get()` 获取全部数据用于统计
+   - 使用 `paginate()` 获取分页数据用于显示列表
+   - 创建 `$stats` 数组存储准确的统计数据
+
+2. **更新视图文件** (`resources/views/inventory/index.blade.php`)
+   - 使用 `$stats` 数组显示统计数据
+   - 改进库存预警显示，区分低库存和缺货
+   - 确保统计数据反映全部库存情况
+
+#### 修复结果
+- ✅ 库存总数现在显示全部库存的总数量
+- ✅ 库存总价值现在计算全部库存的总价值
+- ✅ 库存预警现在显示全部低库存和缺货商品数量
+- ✅ 周转率计算基于全部库存数据
+- ✅ 统计数据与分页无关，始终准确
+
+#### 相关文件
+- `app/Http/Controllers/InventoryController.php` - 改进的控制器
+- `resources/views/inventory/index.blade.php` - 更新的视图
+系统在创建或更新分类时出现数据库完整性约束错误：
+```
+SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'categories_slug_unique'
+```
+
+#### 问题原因
+1. 分类表中的 `slug` 字段存在空值，违反了唯一性约束
+2. Category 模型的 `boot()` 方法中，当分类名称为空或特殊字符时，`Str::slug()` 可能返回空字符串
+3. 没有对生成的 slug 进行唯一性检查和空值处理
+
+#### 解决方案
+1. **创建修复脚本** (`scripts/fix_categories_slug.php`)
+   - 查找所有空的 slug 值
+   - 为每个空 slug 生成唯一的 slug
+   - 处理重复 slug 的情况
+
+2. **改进 Category 模型** (`app/Models/Category.php`)
+   - 添加 `generateUniqueSlug()` 方法
+   - 确保生成的 slug 不为空
+   - 处理 slug 重复的情况
+   - 在创建和更新时自动生成唯一 slug
+
+3. **数据库迁移** (`2025_08_02_121714_ensure_categories_slug_not_null.php`)
+   - 修复现有的空 slug 值
+   - 修改字段约束，确保 slug 字段不允许空值
+
+#### 修复结果
+- ✅ 成功修复了 1 个空的 slug 值
+- ✅ 改进了 slug 生成逻辑，防止未来出现类似问题
+- ✅ 添加了数据库约束，确保数据完整性
+
+#### 相关文件
+- `scripts/fix_categories_slug.php` - 修复脚本
+- `app/Models/Category.php` - 改进的模型
+- `database/migrations/2025_08_02_121714_ensure_categories_slug_not_null.php` - 数据库迁移
+
 ## 功能模块
 
 ### 1. 用户管理系统

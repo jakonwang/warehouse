@@ -11,7 +11,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-blue-100 text-sm font-medium"><x-lang key="messages.inventory.total_inventory"/></p>
-                    <p class="text-4xl font-bold">{{ number_format($inventory->sum('quantity')) }}</p>
+                    <p class="text-4xl font-bold">{{ number_format($stats['total_quantity']) }}</p>
                     <p class="text-blue-200 text-xs mt-1"><x-lang key="messages.inventory.increase_from_last_month"/></p>
                 </div>
                 <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center">
@@ -25,7 +25,7 @@
                 <div>
                     <p class="text-emerald-100 text-sm font-medium"><x-lang key="messages.inventory.inventory_value"/></p>
                     <p class="text-4xl font-bold">
-                        ¥{{ number_format($inventory->sum(function($item){ return $item->quantity * ($item->product->cost_price ?? 0); })) }}
+                        ¥{{ number_format($stats['total_value']) }}
                     </p>
                     <p class="text-emerald-200 text-xs mt-1"><x-lang key="messages.inventory.increase_from_last_month"/></p>
                 </div>
@@ -40,9 +40,11 @@
                 <div>
                     <p class="text-orange-100 text-sm font-medium"><x-lang key="messages.inventory.low_stock_warning"/></p>
                     <p class="text-4xl font-bold">
-                        {{ $inventory->filter(function($item){ return $item->quantity <= ($item->min_quantity ?? 0); })->count() }}
+                        {{ $stats['low_stock_count'] + $stats['out_of_stock_count'] }}
                     </p>
-                    <p class="text-orange-200 text-xs mt-1"><x-lang key="messages.inventory.need_restock"/></p>
+                    <p class="text-orange-200 text-xs mt-1">
+                        {{ $stats['low_stock_count'] }} 低库存 / {{ $stats['out_of_stock_count'] }} 缺货
+                    </p>
                 </div>
                 <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center">
                     <i class="bi bi-exclamation-triangle text-3xl"></i>
