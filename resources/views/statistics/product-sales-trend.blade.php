@@ -532,9 +532,15 @@ function productSalesTrend(config) {
         loadProductDetailChart(productId) {
             console.log('Loading product detail chart for product ID:', productId);
             
+            // 先销毁现有图表
             if (this.productDetailChart) {
                 console.log('Destroying existing chart');
-                this.productDetailChart.destroy();
+                try {
+                    this.productDetailChart.destroy();
+                } catch (error) {
+                    console.warn('Error destroying chart:', error);
+                }
+                this.productDetailChart = null;
             }
 
             const ctx = document.getElementById('productDetailChart');
@@ -545,58 +551,132 @@ function productSalesTrend(config) {
 
             console.log('Canvas element found:', ctx);
 
-            try {
-                console.log('Creating new chart');
-                this.productDetailChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: [],
-                        datasets: [{
-                            label: '日销量',
-                            data: [],
-                            borderColor: 'rgb(147, 51, 234)',
-                            backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
+            // 先获取数据，再创建图表
+            const detailUrl = '{{ route("statistics.product-sales-trend.detail") }}';
+            console.log('Fetching data from:', detailUrl);
+            
+            fetch(`${detailUrl}?product_id=${productId}&days=30`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', data);
+                    
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        console.log('Creating chart with data');
+                        
+                        // 准备数据
+                        const labels = data.map(item => item.date);
+                        const quantities = data.map(item => parseInt(item.quantity) || 0);
+                        
+                        // 创建新图表
+                        try {
+                            this.productDetailChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: '日销量',
+                                        data: quantities,
+                                        borderColor: 'rgb(147, 51, 234)',
+                                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                                        tension: 0.4,
+                                        fill: true,
+                                        pointRadius: 4,
+                                        pointHoverRadius: 6
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { 
+                                        legend: { display: false },
+                                        tooltip: {
+                                            mode: 'index',
+                                            intersect: false
+                                        }
+                                    },
+                                    scales: { 
+                                        y: { 
+                                            beginAtZero: true,
+                                            ticks: {
+                                                stepSize: 1
+                                            }
+                                        },
+                                        x: {
+                                            ticks: {
+                                                maxTicksLimit: 10
+                                            }
+                                        }
+                                    },
+                                    interaction: {
+                                        mode: 'nearest',
+                                        axis: 'x',
+                                        intersect: false
+                                    }
+                                }
+                            });
+                            console.log('Chart created successfully');
+                        } catch (chartError) {
+                            console.error('Error creating chart:', chartError);
+                        }
+                    } else {
+                        console.warn('No data received for product detail');
+                        // 创建空图表
+                        this.productDetailChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: [{
+                                    label: '日销量',
+                                    data: [],
+                                    borderColor: 'rgb(147, 51, 234)',
+                                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: { y: { beginAtZero: true } }
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading product detail:', error);
+                    // 创建错误状态图表
+                    try {
+                        this.productDetailChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: ['加载失败'],
+                                datasets: [{
+                                    label: '日销量',
+                                    data: [0],
+                                    borderColor: 'rgb(239, 68, 68)',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: { y: { beginAtZero: true } }
+                            }
+                        });
+                    } catch (chartError) {
+                        console.error('Error creating error chart:', chartError);
                     }
                 });
-
-                console.log('Chart created successfully');
-
-                const detailUrl = '{{ route("statistics.product-sales-trend.detail") }}';
-                console.log('Fetching data from:', detailUrl);
-                
-                fetch(`${detailUrl}?product_id=${productId}&days=30`)
-                    .then(response => {
-                        console.log('Response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Received data:', data);
-                        
-                        if (data && Array.isArray(data) && data.length > 0) {
-                            console.log('Updating chart with data');
-                            this.productDetailChart.data.labels = data.map(item => item.date);
-                            this.productDetailChart.data.datasets[0].data = data.map(item => item.quantity);
-                            this.productDetailChart.update();
-                            console.log('Chart updated successfully');
-                        } else {
-                            console.warn('No data received for product detail');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading product detail:', error);
-                    });
-            } catch (error) {
-                console.error('Error creating product detail chart:', error);
-            }
         }
     };
 }

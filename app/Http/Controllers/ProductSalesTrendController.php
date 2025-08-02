@@ -511,6 +511,9 @@ class ProductSalesTrendController extends Controller
             return response()->json(['error' => '只支持查看标准商品的详情'], 400);
         }
 
+        $user = auth()->user();
+        $storeId = session('current_store_id');
+        
         $endDate = now();
         $startDate = $endDate->copy()->subDays($days - 1);
         
@@ -519,14 +522,7 @@ class ProductSalesTrendController extends Controller
             ->join('products', 'sale_details.product_id', '=', 'products.id')
             ->where('sale_details.product_id', $productId)
             ->where('products.type', 'standard')
-            ->whereBetween('sales.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->select(
-                DB::raw('DATE(sales.created_at) as sale_date'),
-                DB::raw('SUM(sale_details.quantity) as quantity'),
-                DB::raw('SUM(sale_details.total) as amount')
-            )
-            ->groupBy('sale_date')
-            ->get();
+            ->whereBetween('sales.created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
 
         // 获取盲袋发货数据
         $blindBagData = DB::table('blind_bag_deliveries')
@@ -534,21 +530,48 @@ class ProductSalesTrendController extends Controller
             ->join('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
             ->where('blind_bag_deliveries.delivery_product_id', $productId)
             ->where('products.type', 'standard')
-            ->whereBetween('sales.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->select(
-                DB::raw('DATE(sales.created_at) as sale_date'),
-                DB::raw('SUM(blind_bag_deliveries.quantity) as quantity'),
-                DB::raw('SUM(blind_bag_deliveries.total_cost) as amount')
-            )
-            ->groupBy('sale_date')
-            ->get();
+            ->whereBetween('sales.created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
+
+        // 权限控制
+        if (!$user->isSuperAdmin()) {
+            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+            $standardData->whereIn('sales.store_id', $userStoreIds);
+            $blindBagData->whereIn('sales.store_id', $userStoreIds);
+        }
+
+        // 仓库筛选
+        if ($storeId && $storeId != 0) {
+            $standardData->where('sales.store_id', $storeId);
+            $blindBagData->where('sales.store_id', $storeId);
+        }
+
+        // 执行查询
+        $standardData = $standardData->select(
+            DB::raw('DATE(sales.created_at) as sale_date'),
+            DB::raw('SUM(sale_details.quantity) as quantity'),
+            DB::raw('SUM(sale_details.total) as amount')
+        )
+        ->groupBy('sale_date')
+        ->get();
+
+        $blindBagData = $blindBagData->select(
+            DB::raw('DATE(sales.created_at) as sale_date'),
+            DB::raw('SUM(blind_bag_deliveries.quantity) as quantity'),
+            DB::raw('SUM(blind_bag_deliveries.total_cost) as amount')
+        )
+        ->groupBy('sale_date')
+        ->get();
 
         // 合并数据
         $combinedData = collect();
         
         // 处理标准商品销售数据
         foreach ($standardData as $item) {
-            $combinedData->put($item->sale_date, $item);
+            $combinedData->put($item->sale_date, (object) [
+                'sale_date' => $item->sale_date,
+                'quantity' => $item->quantity,
+                'amount' => $item->amount
+            ]);
         }
         
         // 处理盲袋发货数据，累加到现有数据或创建新记录
@@ -560,7 +583,11 @@ class ProductSalesTrendController extends Controller
                 $existing->amount += $item->amount;
             } else {
                 // 创建新记录
-                $combinedData->put($item->sale_date, $item);
+                $combinedData->put($item->sale_date, (object) [
+                    'sale_date' => $item->sale_date,
+                    'quantity' => $item->quantity,
+                    'amount' => $item->amount
+                ]);
             }
         }
 
@@ -574,6 +601,14 @@ class ProductSalesTrendController extends Controller
                     'amount' => (float)$item->amount
                 ];
             });
+
+        // 添加调试日志
+        \Log::info('Product detail trend data:', [
+            'product_id' => $productId,
+            'days' => $days,
+            'data_count' => $data->count(),
+            'sample_data' => $data->take(3)->toArray()
+        ]);
 
         return response()->json($data);
     }
