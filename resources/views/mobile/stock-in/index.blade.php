@@ -86,7 +86,11 @@
                                         <option value="{{ $product->id }}" 
                                                 data-cost="{{ $product->cost_price }}"
                                                 data-name="{{ $product->name }}">
-                                            {{ $product->name }} (<x-lang key="mobile.stock_in.cost"/>¥{{ $product->cost_price }})
+                                            @if(auth()->user()->isSuperAdmin())
+                                                {{ $product->name }} (<x-lang key="mobile.stock_in.cost"/>¥{{ $product->cost_price }})
+                                            @else
+                                                {{ $product->name }}
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -289,7 +293,15 @@ document.addEventListener('alpine:init', () => {
                 products.forEach(product => {
                     const option = document.createElement('option');
                     option.value = product.id;
-                    option.textContent = `${product.name} (成本¥${product.cost_price})`;
+                    
+                    // 根据用户权限显示不同的文本
+                    const isSuperAdmin = {{ auth()->user()->isSuperAdmin() ? 'true' : 'false' }};
+                    if (isSuperAdmin) {
+                        option.textContent = `${product.name} (成本¥${product.cost_price})`;
+                    } else {
+                        option.textContent = product.name;
+                    }
+                    
                     option.dataset.cost = product.cost_price;
                     option.dataset.name = product.name;
                     

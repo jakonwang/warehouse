@@ -223,7 +223,16 @@ class StockInController extends Controller
             });
         }
         
-        $products = $productsQuery->orderBy('sort_order')->get();
+        // 根据用户权限返回不同的字段
+        if ($user->isSuperAdmin()) {
+            $products = $productsQuery->orderBy('sort_order')->get();
+        } else {
+            $products = $productsQuery->orderBy('sort_order')->get(['id', 'name', 'code', 'type', 'is_active', 'sort_order']);
+            // 为非超级管理员隐藏成本信息
+            $products->each(function($product) {
+                $product->cost_price = null;
+            });
+        }
         
         // 获取最近的入库记录
         $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
@@ -254,13 +263,23 @@ class StockInController extends Controller
         }
 
         // 获取该仓库的商品
-        $products = Product::where('is_active', true)
+        $productsQuery = Product::where('is_active', true)
             ->where('type', 'standard')
             ->whereHas('inventories', function($query) use ($storeId) {
                 $query->where('store_id', $storeId);
             })
-            ->orderBy('sort_order')
-            ->get(['id', 'name', 'code', 'cost_price']);
+            ->orderBy('sort_order');
+            
+        // 根据用户权限返回不同的字段
+        if ($user->isSuperAdmin()) {
+            $products = $productsQuery->get(['id', 'name', 'code', 'cost_price']);
+        } else {
+            $products = $productsQuery->get(['id', 'name', 'code']);
+            // 为非超级管理员隐藏成本信息
+            $products->each(function($product) {
+                $product->cost_price = null;
+            });
+        }
 
         return response()->json([
             'success' => true,
