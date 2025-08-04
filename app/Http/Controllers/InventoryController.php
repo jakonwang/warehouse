@@ -793,7 +793,7 @@ class InventoryController extends Controller
 
         // 写入表头
         foreach ($headers as $colIndex => $header) {
-            $sheet->setCellValueByColumnAndRow($colIndex + 1, 1, $header);
+            $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1) . '1', $header);
         }
 
         // 设置表头样式
@@ -845,20 +845,20 @@ class InventoryController extends Controller
             }
 
             // 写入数据行
-            $sheet->setCellValueByColumnAndRow(1, $rowIndex, $row->product_name ?? '未知商品');
-            $sheet->setCellValueByColumnAndRow(2, $rowIndex, $row->product_code ?? '未知编码');
-            $sheet->setCellValueByColumnAndRow(3, $rowIndex, $row->product_type == 'standard' ? '标品' : '盲袋');
-            $sheet->setCellValueByColumnAndRow(4, $rowIndex, $imageUrl);
-            $sheet->setCellValueByColumnAndRow(5, $rowIndex, number_format($costPrice, 2));
-            $sheet->setCellValueByColumnAndRow(6, $rowIndex, number_format($totalCost, 2));
-            $sheet->setCellValueByColumnAndRow(7, $rowIndex, $row->quantity ?? 0);
-            $sheet->setCellValueByColumnAndRow(8, $rowIndex, $row->min_quantity ?? 0);
-            $sheet->setCellValueByColumnAndRow(9, $rowIndex, $row->max_quantity ?? 0);
-            $sheet->setCellValueByColumnAndRow(10, $rowIndex, $status);
-            $sheet->setCellValueByColumnAndRow(11, $rowIndex, $row->last_stock_in_at ?? '无记录');
-            $sheet->setCellValueByColumnAndRow(12, $rowIndex, $row->last_stock_out_at ?? '无记录');
-            $sheet->setCellValueByColumnAndRow(13, $rowIndex, $row->store_name ?? '未知仓库');
-            $sheet->setCellValueByColumnAndRow(14, $rowIndex, $row->remark ?? '');
+            $sheet->setCellValue('A' . $rowIndex, $row->product_name ?? '未知商品');
+            $sheet->setCellValue('B' . $rowIndex, $row->product_code ?? '未知编码');
+            $sheet->setCellValue('C' . $rowIndex, $row->product_type == 'standard' ? '标品' : '盲袋');
+            $sheet->setCellValue('D' . $rowIndex, $imageUrl);
+            $sheet->setCellValue('E' . $rowIndex, number_format($costPrice, 2));
+            $sheet->setCellValue('F' . $rowIndex, number_format($totalCost, 2));
+            $sheet->setCellValue('G' . $rowIndex, $row->quantity ?? 0);
+            $sheet->setCellValue('H' . $rowIndex, $row->min_quantity ?? 0);
+            $sheet->setCellValue('I' . $rowIndex, $row->max_quantity ?? 0);
+            $sheet->setCellValue('J' . $rowIndex, $status);
+            $sheet->setCellValue('K' . $rowIndex, $row->last_stock_in_at ?? '无记录');
+            $sheet->setCellValue('L' . $rowIndex, $row->last_stock_out_at ?? '无记录');
+            $sheet->setCellValue('M' . $rowIndex, $row->store_name ?? '未知仓库');
+            $sheet->setCellValue('N' . $rowIndex, $row->remark ?? '');
 
             // 尝试添加图片到Excel
             if ($imagePath && file_exists($imagePath)) {
