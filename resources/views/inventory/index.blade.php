@@ -149,9 +149,21 @@
                         <button onclick="batchOperation()" class="text-sm text-gray-500 hover:text-gray-700"><x-lang key="messages.inventory.batch_operations"/></button>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <a href="{{ route('inventory.export') }}" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200">
-                            <i class="bi bi-download"></i>
-                        </a>
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200">
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                <div class="py-1">
+                                    <a href="{{ route('inventory.export') }}?format=csv" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="bi bi-file-earmark-text mr-2"></i>导出CSV
+                                    </a>
+                                    <a href="{{ route('inventory.export') }}?format=excel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="bi bi-file-earmark-excel mr-2"></i>导出Excel（含图片）
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                         <button onclick="printData()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200">
                             <i class="bi bi-printer"></i>
                         </button>

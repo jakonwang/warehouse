@@ -681,6 +681,7 @@ class InventoryController extends Controller
             $minQuantity = $request->input('min_quantity');
             $maxQuantity = $request->input('max_quantity');
             $storeId = $request->input('store_id');
+            $format = $request->input('format', 'csv'); // 支持csv和excel格式
 
             // 构建查询
             $query = DB::table('inventory')
@@ -746,22 +747,190 @@ class InventoryController extends Controller
                 return back()->with('warning', '暂无数据可导出');
             }
 
-            // 生成CSV内容
-            $csvContent = $this->generateInventoryCSV($data);
-
-            // 生成文件名
-            $filename = 'inventory_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
-
-            // 返回CSV下载
-            return Response::make($csvContent, 200, [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            ]);
+            // 根据格式选择导出方式
+            if ($format === 'excel') {
+                return $this->exportToExcel($data);
+            } else {
+                return $this->exportToCSV($data);
+            }
 
         } catch (\Exception $e) {
             \Log::error('库存导出失败: ' . $e->getMessage());
             return back()->with('error', '导出失败：' . $e->getMessage());
         }
+    }
+
+    /**
+     * 导出为Excel格式（包含图片）
+     */
+    private function exportToExcel($data)
+    {
+        // 检查是否安装了PhpSpreadsheet
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            return back()->with('error', '请先安装PhpSpreadsheet库：composer require phpoffice/phpspreadsheet');
+        }
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // 设置表头
+        $headers = [
+            '商品名称',
+            '商品编码', 
+            '商品类型',
+            '商品图片',
+            '成本价格',
+            '总成本',
+            '当前库存',
+            '最低库存',
+            '最高库存',
+            '库存状态',
+            '最后入库时间',
+            '最后出库时间',
+            '仓库名称',
+            '备注'
+        ];
+
+        // 写入表头
+        foreach ($headers as $colIndex => $header) {
+            $sheet->setCellValueByColumnAndRow($colIndex + 1, 1, $header);
+        }
+
+        // 设置表头样式
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4472C4'],
+            ],
+        ];
+        $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
+
+        // 写入数据
+        $rowIndex = 2;
+        foreach ($data as $row) {
+            // 计算总成本
+            $costPrice = $row->product_cost_price ?? 0;
+            $totalCost = $costPrice * ($row->quantity ?? 0);
+            
+            // 处理图片URL
+            $imageUrl = '';
+            $imagePath = '';
+            if ($row->product_image) {
+                if (str_starts_with($row->product_image, 'http')) {
+                    $imageUrl = $row->product_image;
+                } elseif (str_contains($row->product_image, 'uploads/')) {
+                    $imageUrl = asset($row->product_image);
+                    $imagePath = public_path($row->product_image);
+                } elseif (str_contains($row->product_image, 'storage/')) {
+                    $imageUrl = asset($row->product_image);
+                    $imagePath = storage_path('app/public/' . str_replace('storage/', '', $row->product_image));
+                } else {
+                    $imageUrl = \Illuminate\Support\Facades\Storage::url($row->product_image);
+                    $imagePath = storage_path('app/public/' . $row->product_image);
+                }
+            }
+
+            // 确定库存状态
+            $status = '';
+            if ($row->quantity <= $row->min_quantity) {
+                $status = '库存不足';
+            } elseif ($row->quantity == 0) {
+                $status = '无库存';
+            } else {
+                $status = '库存充足';
+            }
+
+            // 写入数据行
+            $sheet->setCellValueByColumnAndRow(1, $rowIndex, $row->product_name ?? '未知商品');
+            $sheet->setCellValueByColumnAndRow(2, $rowIndex, $row->product_code ?? '未知编码');
+            $sheet->setCellValueByColumnAndRow(3, $rowIndex, $row->product_type == 'standard' ? '标品' : '盲袋');
+            $sheet->setCellValueByColumnAndRow(4, $rowIndex, $imageUrl);
+            $sheet->setCellValueByColumnAndRow(5, $rowIndex, number_format($costPrice, 2));
+            $sheet->setCellValueByColumnAndRow(6, $rowIndex, number_format($totalCost, 2));
+            $sheet->setCellValueByColumnAndRow(7, $rowIndex, $row->quantity ?? 0);
+            $sheet->setCellValueByColumnAndRow(8, $rowIndex, $row->min_quantity ?? 0);
+            $sheet->setCellValueByColumnAndRow(9, $rowIndex, $row->max_quantity ?? 0);
+            $sheet->setCellValueByColumnAndRow(10, $rowIndex, $status);
+            $sheet->setCellValueByColumnAndRow(11, $rowIndex, $row->last_stock_in_at ?? '无记录');
+            $sheet->setCellValueByColumnAndRow(12, $rowIndex, $row->last_stock_out_at ?? '无记录');
+            $sheet->setCellValueByColumnAndRow(13, $rowIndex, $row->store_name ?? '未知仓库');
+            $sheet->setCellValueByColumnAndRow(14, $rowIndex, $row->remark ?? '');
+
+            // 尝试添加图片到Excel
+            if ($imagePath && file_exists($imagePath)) {
+                try {
+                    $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                    $drawing->setName('Product_' . $row->product_code);
+                    $drawing->setDescription('Product Image');
+                    $drawing->setPath($imagePath);
+                    $drawing->setHeight(50);
+                    $drawing->setWidth(50);
+                    $drawing->setCoordinates('D' . $rowIndex);
+                    $drawing->setWorksheet($sheet);
+                } catch (\Exception $e) {
+                    \Log::warning('添加图片到Excel失败: ' . $e->getMessage());
+                }
+            }
+
+            $rowIndex++;
+        }
+
+        // 调整列宽
+        $sheet->getColumnDimension('A')->setWidth(20); // 商品名称
+        $sheet->getColumnDimension('B')->setWidth(15); // 商品编码
+        $sheet->getColumnDimension('C')->setWidth(10); // 商品类型
+        $sheet->getColumnDimension('D')->setWidth(15); // 商品图片
+        $sheet->getColumnDimension('E')->setWidth(12); // 成本价格
+        $sheet->getColumnDimension('F')->setWidth(12); // 总成本
+        $sheet->getColumnDimension('G')->setWidth(12); // 当前库存
+        $sheet->getColumnDimension('H')->setWidth(12); // 最低库存
+        $sheet->getColumnDimension('I')->setWidth(12); // 最高库存
+        $sheet->getColumnDimension('J')->setWidth(12); // 库存状态
+        $sheet->getColumnDimension('K')->setWidth(15); // 最后入库时间
+        $sheet->getColumnDimension('L')->setWidth(15); // 最后出库时间
+        $sheet->getColumnDimension('M')->setWidth(15); // 仓库名称
+        $sheet->getColumnDimension('N')->setWidth(20); // 备注
+
+        // 设置行高（为图片留出空间）
+        for ($i = 2; $i < $rowIndex; $i++) {
+            $sheet->getRowDimension($i)->setRowHeight(60);
+        }
+
+        // 生成文件名
+        $filename = 'inventory_export_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        // 创建Excel写入器
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        // 输出到浏览器
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
+    }
+
+    /**
+     * 导出为CSV格式
+     */
+    private function exportToCSV($data)
+    {
+        // 生成CSV内容
+        $csvContent = $this->generateInventoryCSV($data);
+
+        // 生成文件名
+        $filename = 'inventory_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+        // 返回CSV下载
+        return Response::make($csvContent, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
