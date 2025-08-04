@@ -201,6 +201,7 @@
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><x-lang key="messages.inventory.product_info"/></th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><x-lang key="messages.inventory.stock_quantity"/></th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成本价格</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><x-lang key="messages.inventory.stock_status"/></th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><x-lang key="messages.inventory.last_check"/></th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><x-lang key="messages.inventory.actions"/></th>
@@ -215,9 +216,13 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <i class="bi bi-box text-white text-sm"></i>
-                                    </div>
+                                    @if($item->product && $item->product->image)
+                                        <img src="{{ $item->product->image_url }}" alt="{{ $item->product->name }}" class="w-10 h-10 rounded-lg object-cover border border-gray-200">
+                                    @else
+                                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                            <i class="bi bi-box text-white text-sm"></i>
+                                        </div>
+                                    @endif
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900 product-name">{{ $item->product->name ?? '未知商品' }}</div>
                                         <div class="text-sm text-gray-500">{{ $item->product->code ?? 'N/A' }}</div>
@@ -226,8 +231,16 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-semibold text-gray-900">{{ number_format($item->quantity) }}</div>
-                                <div class="text-xs text-gray-500 min-quantity">{{ $item->min_quantity }}</div>
-                                <div class="text-xs text-gray-500 max-quantity">{{ $item->max_quantity }}</div>
+                                <div class="text-xs text-gray-500 min-quantity">最小: {{ $item->min_quantity }}</div>
+                                <div class="text-xs text-gray-500 max-quantity">最大: {{ $item->max_quantity }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-gray-900">
+                                    ¥{{ number_format($item->product->cost_price ?? 0, 2) }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    总成本: ¥{{ number_format(($item->product->cost_price ?? 0) * $item->quantity, 2) }}
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($item->quantity <= $item->min_quantity)
@@ -273,7 +286,7 @@
                         @endforeach
                     @else
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <div class="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                     <i class="bi bi-box text-gray-400 text-2xl"></i>
                                 </div>
