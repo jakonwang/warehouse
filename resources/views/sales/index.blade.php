@@ -13,41 +13,68 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0,0,0,0.9);
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
     
     .image-modal.show {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        opacity: 1;
     }
     
     .image-modal-content {
         max-width: 90%;
         max-height: 90%;
         object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    }
+    
+    .image-modal.show .image-modal-content {
+        transform: scale(1);
     }
     
     .image-modal-close {
         position: absolute;
-        top: 15px;
-        right: 35px;
+        top: 20px;
+        right: 30px;
         color: #f1f1f1;
         font-size: 40px;
         font-weight: bold;
         cursor: pointer;
+        background: rgba(0,0,0,0.5);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .image-modal-close:hover {
+        background: rgba(0,0,0,0.8);
+        transform: scale(1.1);
     }
     
     .product-image {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
         object-fit: cover;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
     .product-image:hover {
         transform: scale(1.1);
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
     
     .product-images-container {
@@ -339,12 +366,16 @@ function openImageModal(imageUrl, imageName) {
     const modalImg = document.getElementById('modalImage');
     modalImg.src = imageUrl;
     modalImg.alt = imageName;
+    modal.style.display = 'flex';
     modal.classList.add('show');
+    document.body.style.overflow = 'hidden'; // 防止背景滚动
 }
 
 function closeImageModal() {
     const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
     modal.classList.remove('show');
+    document.body.style.overflow = 'auto'; // 恢复背景滚动
 }
 
 // 点击模态框背景关闭
@@ -359,6 +390,11 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeImageModal();
     }
+});
+
+// 点击关闭按钮关闭模态框
+document.querySelector('.image-modal-close').addEventListener('click', function() {
+    closeImageModal();
 });
 </script>
 @endsection 

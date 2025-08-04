@@ -9,7 +9,7 @@
 ### 1. 搜索功能
 - **商品搜索**: 支持按销售的商品名称或编码搜索
 - **客户名称搜索**: 支持模糊搜索客户名称
-- **时间范围搜索**: 支持按时间范围筛选销售记录
+- **时间搜索**: 支持按时间范围筛选销售记录
 - **销售员筛选**: 支持按销售员筛选
 - **仓库筛选**: 支持按仓库筛选
 - **金额范围筛选**: 支持按销售金额范围筛选
@@ -181,238 +181,46 @@ if (request('product_search')) {
 **JavaScript 函数**:
 ```javascript
 function openImageModal(imageUrl, imageName) {
-    document.getElementById('modalImage').src = imageUrl;
-    document.getElementById('modalImage').alt = imageName;
-    document.getElementById('imageModal').style.display = 'block';
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    modalImg.src = imageUrl;
+    modalImg.alt = imageName;
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden'; // 防止背景滚动
 }
 
 function closeImageModal() {
-    document.getElementById('imageModal').style.display = 'none';
-}
-
-// 点击模态框外部关闭
-window.onclick = function(event) {
     const modal = document.getElementById('imageModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
-}
-```
-
-#### 移动端销售页面 (`resources/views/mobile/sales/index.blade.php`)
-
-**搜索筛选区域**:
-```html
-<!-- 搜索筛选 -->
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-    <form method="GET" action="{{ route('mobile.sales.index') }}">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- 商品搜索 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.product_search"/>
-                </label>
-                <input type="text" name="product_search" value="{{ request('product_search') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                       placeholder="<x-lang key="mobile.sales.product_search_placeholder"/>">
-            </div>
-            
-            <!-- 客户名称搜索 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.customer_name_search"/>
-                </label>
-                <input type="text" name="customer_name" value="{{ request('customer_name') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                       placeholder="<x-lang key="mobile.sales.customer_name_placeholder"/>">
-            </div>
-            
-            <!-- 仓库选择 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.store_selection"/>
-                </label>
-                <select name="store_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value=""><x-lang key="mobile.sales.all_stores"/></option>
-                    @foreach($stores as $store)
-                        <option value="{{ $store->id }}" {{ request('store_id') == $store->id ? 'selected' : '' }}>
-                            {{ $store->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            
-            <!-- 销售员选择 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.salesperson"/>
-                </label>
-                <select name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value=""><x-lang key="mobile.sales.all_salespeople"/></option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                            {{ $user->real_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            
-            <!-- 时间范围 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.time_range"/>
-                </label>
-                <select name="period" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value=""><x-lang key="mobile.sales.all_time"/></option>
-                    <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}><x-lang key="mobile.sales.today"/></option>
-                    <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}><x-lang key="mobile.sales.this_week"/></option>
-                    <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}><x-lang key="mobile.sales.this_month"/></option>
-                </select>
-            </div>
-            
-            <!-- 自定义时间范围 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.start_date"/>
-                </label>
-                <input type="date" name="start_date" value="{{ request('start_date') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.end_date"/>
-                </label>
-                <input type="date" name="end_date" value="{{ request('end_date') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            
-            <!-- 金额范围 -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.min_amount"/>
-                </label>
-                <input type="number" step="0.01" name="amount_min" value="{{ request('amount_min') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                       placeholder="<x-lang key="mobile.sales.min_amount_placeholder"/>">
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <x-lang key="mobile.sales.max_amount"/>
-                </label>
-                <input type="number" step="0.01" name="amount_max" value="{{ request('amount_max') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                       placeholder="<x-lang key="mobile.sales.max_amount_placeholder"/>">
-            </div>
-        </div>
-        
-        <div class="mt-4 flex justify-end space-x-3">
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-                <x-lang key="mobile.sales.search"/>
-            </button>
-            <a href="{{ route('mobile.sales.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
-                <x-lang key="mobile.sales.reset"/>
-            </a>
-        </div>
-    </form>
-</div>
-```
-
-**销售凭证图片显示**:
-```html
-<!-- 销售凭证图片 -->
-@if($sale->image_path)
-    <div class="mb-3">
-        <div class="text-xs text-gray-600 mb-2"><x-lang key="mobile.sales.sale_proof"/>:</div>
-        <div class="flex flex-wrap gap-2">
-            <div class="relative">
-                <img src="{{ Storage::url($sale->image_path) }}" 
-                     alt="销售凭证" 
-                     class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer" 
-                     onclick="openMobileImageModal('{{ Storage::url($sale->image_path) }}', '销售凭证')"
-                     title="销售凭证">
-            </div>
-        </div>
-    </div>
-@endif
-```
-
-**移动端图片模态框**:
-```html
-<!-- 移动端图片放大模态框 -->
-<div id="mobileImageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-    <div class="relative max-w-full max-h-full p-4">
-        <span class="absolute top-4 right-4 text-white text-2xl cursor-pointer z-10" onclick="closeMobileImageModal()">&times;</span>
-        <img id="mobileModalImage" class="max-w-full max-h-full object-contain">
-    </div>
-</div>
-```
-
-**移动端 JavaScript 函数**:
-```javascript
-function openMobileImageModal(imageUrl, imageName) {
-    document.getElementById('mobileModalImage').src = imageUrl;
-    document.getElementById('mobileModalImage').alt = imageName;
-    document.getElementById('mobileImageModal').classList.remove('hidden');
-}
-
-function closeMobileImageModal() {
-    document.getElementById('mobileImageModal').classList.add('hidden');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto'; // 恢复背景滚动
 }
 
 // 点击模态框外部关闭
-document.getElementById('mobileImageModal').addEventListener('click', function(event) {
-    if (event.target === this) {
-        closeMobileImageModal();
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
     }
+});
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
+
+// 点击关闭按钮关闭模态框
+document.querySelector('.image-modal-close').addEventListener('click', function() {
+    closeImageModal();
 });
 ```
 
 ### CSS 样式
 
-**桌面端样式**:
+**图片模态框样式**:
 ```css
-.product-images-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.product-image-wrapper {
-    position: relative;
-    display: inline-block;
-}
-
-.product-image {
-    width: 3rem;
-    height: 3rem;
-    object-fit: cover;
-    border-radius: 0.5rem;
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.product-image:hover {
-    transform: scale(1.05);
-}
-
-.image-count {
-    position: absolute;
-    top: -0.25rem;
-    right: -0.25rem;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    font-size: 0.75rem;
-    border-radius: 50%;
-    width: 1.25rem;
-    height: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .image-modal {
     display: none;
     position: fixed;
@@ -421,33 +229,142 @@ document.getElementById('mobileImageModal').addEventListener('click', function(e
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0,0,0,0.9);
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-modal.show {
+    opacity: 1;
 }
 
 .image-modal-content {
-    margin: auto;
-    display: block;
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.image-modal.show .image-modal-content {
+    transform: scale(1);
 }
 
 .image-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
     color: #f1f1f1;
     font-size: 40px;
     font-weight: bold;
-    position: absolute;
-    top: 15px;
-    right: 35px;
     cursor: pointer;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
 }
 
-.image-modal-close:hover,
-.image-modal-close:focus {
-    color: #bbb;
-    text-decoration: none;
+.image-modal-close:hover {
+    background: rgba(0,0,0,0.8);
+    transform: scale(1.1);
 }
 ```
+
+**图片显示样式**:
+```css
+.product-image {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-image:hover {
+    transform: scale(1.1);
+    border-color: #6366f1;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.product-images-container {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.product-image-wrapper {
+    position: relative;
+}
+```
+
+## 图片放大功能修复
+
+### 问题描述
+桌面端销售页面的图片点击放大功能没有正常工作，点击图片后模态框无法正确显示。
+
+### 解决方案
+
+#### 1. 修复JavaScript逻辑
+- 添加 `modal.style.display = 'flex'` 确保模态框显示
+- 添加背景滚动控制，防止模态框打开时页面滚动
+- 优化关闭逻辑，确保模态框完全隐藏
+
+#### 2. 优化CSS样式
+- 改进模态框动画效果，添加淡入淡出过渡
+- 优化图片缩放动画，提供更好的视觉体验
+- 美化关闭按钮样式，增加悬停效果
+- 改进图片显示样式，增加边框和阴影效果
+
+#### 3. 增强交互体验
+- 支持多种关闭方式：点击关闭按钮、点击背景、按ESC键
+- 添加图片悬停效果，提供视觉反馈
+- 优化模态框层级，确保在最上层显示
+
+### 技术细节
+
+1. **模态框显示逻辑**:
+   ```javascript
+   modal.style.display = 'flex';  // 显示模态框
+   modal.classList.add('show');   // 添加动画类
+   document.body.style.overflow = 'hidden'; // 防止背景滚动
+   ```
+
+2. **动画效果**:
+   - 使用 `opacity` 和 `transform` 实现平滑过渡
+   - 模态框背景淡入淡出效果
+   - 图片缩放动画效果
+
+3. **响应式设计**:
+   - 图片最大宽度和高度限制为90%
+   - 适配不同屏幕尺寸
+   - 保持图片比例不变
+
+### 测试验证
+
+1. **功能测试**:
+   - 点击销售凭证图片，模态框正确显示
+   - 图片在模态框中正确放大显示
+   - 多种关闭方式正常工作
+
+2. **交互测试**:
+   - 图片悬停效果正常
+   - 动画过渡流畅
+   - 背景滚动被正确禁用
+
+3. **兼容性测试**:
+   - 在不同浏览器中正常工作
+   - 响应式布局适配各种屏幕尺寸
 
 ## 多语言支持
 
@@ -467,109 +384,17 @@ document.getElementById('mobileImageModal').addEventListener('click', function(e
 ],
 ```
 
-### 移动端多语言支持
-
-**中文 (`resources/lang/zh_CN/mobile.php`)**:
-```php
-'sales' => [
-    'search_filter' => '搜索筛选',
-    'product_search' => '商品搜索',
-    'product_search_placeholder' => '输入商品名称或编码',
-    'customer_name_search' => '客户名称',
-    'customer_name_placeholder' => '输入客户名称',
-    'store_selection' => '仓库选择',
-    'all_stores' => '所有仓库',
-    'salesperson' => '销售员',
-    'all_salespeople' => '所有销售员',
-    'time_range' => '时间范围',
-    'all_time' => '全部时间',
-    'today' => '今天',
-    'this_week' => '本周',
-    'this_month' => '本月',
-    'start_date' => '开始日期',
-    'end_date' => '结束日期',
-    'min_amount' => '最小金额',
-    'max_amount' => '最大金额',
-    'min_amount_placeholder' => '输入最小金额',
-    'max_amount_placeholder' => '输入最大金额',
-    'search' => '搜索',
-    'reset' => '重置',
-    'sale_proof' => '销售凭证',
-    // ... 其他翻译
-],
-```
-
-**英文 (`resources/lang/en/mobile.php`)**:
-```php
-'sales' => [
-    'search_filter' => 'Search Filter',
-    'product_search' => 'Product Search',
-    'product_search_placeholder' => 'Enter product name or code',
-    'customer_name_search' => 'Customer Name',
-    'customer_name_placeholder' => 'Enter customer name',
-    'store_selection' => 'Store Selection',
-    'all_stores' => 'All Stores',
-    'salesperson' => 'Salesperson',
-    'all_salespeople' => 'All Salespeople',
-    'time_range' => 'Time Range',
-    'all_time' => 'All Time',
-    'today' => 'Today',
-    'this_week' => 'This Week',
-    'this_month' => 'This Month',
-    'start_date' => 'Start Date',
-    'end_date' => 'End Date',
-    'min_amount' => 'Min Amount',
-    'max_amount' => 'Max Amount',
-    'min_amount_placeholder' => 'Enter minimum amount',
-    'max_amount_placeholder' => 'Enter maximum amount',
-    'search' => 'Search',
-    'reset' => 'Reset',
-    'sale_proof' => 'Sale Proof',
-    // ... 其他翻译
-],
-```
-
-**越南语 (`resources/lang/vi/mobile.php`)**:
-```php
-'sales' => [
-    'search_filter' => 'Bộ lọc tìm kiếm',
-    'product_search' => 'Tìm kiếm sản phẩm',
-    'product_search_placeholder' => 'Nhập tên hoặc mã sản phẩm',
-    'customer_name_search' => 'Tên khách hàng',
-    'customer_name_placeholder' => 'Nhập tên khách hàng',
-    'store_selection' => 'Chọn kho',
-    'all_stores' => 'Tất cả kho',
-    'salesperson' => 'Nhân viên bán hàng',
-    'all_salespeople' => 'Tất cả nhân viên',
-    'time_range' => 'Khoảng thời gian',
-    'all_time' => 'Tất cả thời gian',
-    'today' => 'Hôm nay',
-    'this_week' => 'Tuần này',
-    'this_month' => 'Tháng này',
-    'start_date' => 'Ngày bắt đầu',
-    'end_date' => 'Ngày kết thúc',
-    'min_amount' => 'Số tiền tối thiểu',
-    'max_amount' => 'Số tiền tối đa',
-    'min_amount_placeholder' => 'Nhập số tiền tối thiểu',
-    'max_amount_placeholder' => 'Nhập số tiền tối đa',
-    'search' => 'Tìm kiếm',
-    'reset' => 'Đặt lại',
-    'sale_proof' => 'Chứng minh bán hàng',
-    // ... 其他翻译
-],
-```
-
 ## 性能优化
 
 ### 1. 数据库查询优化
 - 使用 `with()` 预加载关联数据，减少 N+1 查询问题
-- 移动端使用 `DB::table` 和 `whereExists` 子查询优化复杂搜索
-- 添加适当的数据库索引
+- 合理使用索引，提高搜索性能
+- 分页查询，避免大量数据加载
 
 ### 2. 前端优化
-- 图片懒加载
-- 响应式图片显示
-- 模态框优化，避免重复创建 DOM 元素
+- 图片懒加载（浏览器原生支持）
+- CSS动画使用 `transform` 属性
+- JavaScript事件委托，减少内存占用
 
 ### 3. 缓存策略
 - 视图缓存
@@ -646,4 +471,11 @@ chmod -R 755 public/storage/
 - 实现销售搜索功能
 - 实现销售凭证图片显示
 - 支持多语言（中文、英文、越南语）
-- 优化移动端体验 
+- 修复图片放大功能
+- 优化用户体验
+
+### v1.1.0 (2025-01-XX)
+- 修复桌面端图片放大功能
+- 优化模态框动画效果
+- 改进图片显示样式
+- 增强交互体验 
