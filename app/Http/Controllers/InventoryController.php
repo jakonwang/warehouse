@@ -691,6 +691,8 @@ class InventoryController extends Controller
                     'products.name as product_name',
                     'products.code as product_code',
                     'products.type as product_type',
+                    'products.image as product_image',
+                    'products.cost_price as product_cost_price',
                     'stores.name as store_name'
                 )
                 ->where('products.type', 'standard'); // 只导出标准商品
@@ -772,6 +774,9 @@ class InventoryController extends Controller
             '商品名称',
             '商品编码',
             '商品类型',
+            '商品图片',
+            '成本价格',
+            '总成本',
             '当前库存',
             '最低库存',
             '最高库存',
@@ -795,10 +800,31 @@ class InventoryController extends Controller
                 $status = '库存充足';
             }
 
+            // 计算总成本
+            $costPrice = $row->product_cost_price ?? 0;
+            $totalCost = $costPrice * ($row->quantity ?? 0);
+            
+            // 处理图片URL
+            $imageUrl = '';
+            if ($row->product_image) {
+                if (str_starts_with($row->product_image, 'http')) {
+                    $imageUrl = $row->product_image;
+                } elseif (str_contains($row->product_image, 'uploads/')) {
+                    $imageUrl = asset($row->product_image);
+                } elseif (str_contains($row->product_image, 'storage/')) {
+                    $imageUrl = asset($row->product_image);
+                } else {
+                    $imageUrl = \Illuminate\Support\Facades\Storage::url($row->product_image);
+                }
+            }
+            
             $csvRow = [
                 $row->product_name ?? '未知商品',
                 $row->product_code ?? '未知编码',
                 $row->product_type == 'standard' ? '标品' : '盲袋',
+                $imageUrl,
+                number_format($costPrice, 2),
+                number_format($totalCost, 2),
                 $row->quantity ?? 0,
                 $row->min_quantity ?? 0,
                 $row->max_quantity ?? 0,
