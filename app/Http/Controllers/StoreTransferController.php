@@ -60,15 +60,19 @@ class StoreTransferController extends Controller
      */
     public function create()
     {
-        // 获取用户有权限的仓库
         $user = Auth::user();
+        
+        // 源仓库：用户有权限的仓库（可以调出商品）
         if ($user->isSuperAdmin()) {
-            $stores = Store::where('is_active', true)->get();
+            $sourceStores = Store::where('is_active', true)->get();
         } else {
-            $stores = $user->stores()->where('is_active', true)->get();
+            $sourceStores = $user->stores()->where('is_active', true)->get();
         }
+        
+        // 目标仓库：所有仓库（可以调入商品）
+        $targetStores = Store::where('is_active', true)->get();
 
-        return view('store-transfers.create', compact('stores'));
+        return view('store-transfers.create', compact('sourceStores', 'targetStores'));
     }
 
     /**
