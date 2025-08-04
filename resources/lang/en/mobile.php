@@ -66,7 +66,7 @@ return [
         'max_amount_placeholder' => 'Max Amount',
         'search' => 'Search',
         'reset' => 'Reset',
-        'product_images' => 'Product Images',
+        'sale_proof' => 'Sale Proof',
         // Details page
         'details' => 'Sales Details',
         'order' => 'Order',

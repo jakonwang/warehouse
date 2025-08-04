@@ -239,7 +239,7 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.order_no"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.sales_mode"/></th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.product_images"/></th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.sale_proof"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.salesperson_name"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.store"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.customer_name"/></th>
@@ -270,53 +270,16 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="product-images-container">
-                                    @php
-                                        $images = collect();
-                                        // 收集标品销售的商品图片
-                                        foreach($sale->saleDetails as $detail) {
-                                            if($detail->product && $detail->product->image_url) {
-                                                $images->push([
-                                                    'url' => $detail->product->image_url,
-                                                    'name' => $detail->product->name
-                                                ]);
-                                            }
-                                        }
-                                        // 收集盲袋销售的商品图片
-                                        foreach($sale->blindBagSales as $blindBagSale) {
-                                            if($blindBagSale->product && $blindBagSale->product->image_url) {
-                                                $images->push([
-                                                    'url' => $blindBagSale->product->image_url,
-                                                    'name' => $blindBagSale->product->name
-                                                ]);
-                                            }
-                                        }
-                                        // 收集盲袋发货的商品图片
-                                        foreach($sale->blindBagDeliveries as $delivery) {
-                                            if($delivery->deliveryProduct && $delivery->deliveryProduct->image_url) {
-                                                $images->push([
-                                                    'url' => $delivery->deliveryProduct->image_url,
-                                                    'name' => $delivery->deliveryProduct->name
-                                                ]);
-                                            }
-                                        }
-                                        $images = $images->unique('url');
-                                    @endphp
-                                    
-                                    @if($images->count() > 0)
-                                        @foreach($images->take(3) as $index => $image)
-                                            <div class="product-image-wrapper">
-                                                <img src="{{ $image['url'] }}" 
-                                                     alt="{{ $image['name'] }}" 
-                                                     class="product-image" 
-                                                     onclick="openImageModal('{{ $image['url'] }}', '{{ $image['name'] }}')"
-                                                     title="{{ $image['name'] }}">
-                                                @if($index == 2 && $images->count() > 3)
-                                                    <div class="image-count">+{{ $images->count() - 3 }}</div>
-                                                @endif
-                                            </div>
-                                        @endforeach
+                                    @if($sale->image_path)
+                                        <div class="product-image-wrapper">
+                                            <img src="{{ Storage::url($sale->image_path) }}" 
+                                                 alt="销售凭证" 
+                                                 class="product-image" 
+                                                 onclick="openImageModal('{{ Storage::url($sale->image_path) }}', '销售凭证')"
+                                                 title="销售凭证">
+                                        </div>
                                     @else
-                                        <span class="text-gray-400 text-xs"><x-lang key="messages.sale.no_images"/></span>
+                                        <span class="text-gray-400 text-xs"><x-lang key="messages.sale.no_sale_proof"/></span>
                                     @endif
                                 </div>
                             </td>

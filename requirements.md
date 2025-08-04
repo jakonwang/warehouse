@@ -1694,12 +1694,12 @@ chart.js:13 Uncaught TypeError: Cannot read properties of undefined (reading 'in
 - 销售员筛选：按销售员筛选销售记录
 - 金额范围：按销售金额范围筛选
 
-#### 13.2.2 商品图片显示功能
+#### 13.2.2 销售凭证图片显示功能
 
 **图片展示**：
-- 销售记录表格中新增"商品图片"列
-- 图片来源：标品销售、盲袋销售、盲袋发货的商品图片
-- 显示方式：最多显示3张图片，超过时显示"+N"标识
+- 销售记录表格中新增"销售凭证"列
+- 图片来源：销售记录中的`image_path`字段（销售时拍摄的客户记录图片）
+- 显示方式：显示销售凭证图片，无图片时显示"无销售凭证"
 - 图片尺寸：40x40px，圆角设计
 
 **图片放大查看**：
@@ -1738,8 +1738,8 @@ chart.js:13 Uncaught TypeError: Cannot read properties of undefined (reading 'in
 - `customer_name_placeholder`：输入客户名称
 - `start_date`：开始日期
 - `end_date`：结束日期
-- `product_images`：商品图片
-- `no_images`：无图片
+- `sale_proof`：销售凭证
+- `no_sale_proof`：无销售凭证
 - `view_image`：查看图片
 
 ### 13.5 性能优化
@@ -1866,12 +1866,12 @@ php artisan cache:clear
 - 销售员筛选：按销售员筛选销售记录
 - 金额范围：按销售金额范围筛选
 
-#### 14.2.2 商品图片显示功能
+#### 14.2.2 销售凭证图片显示功能
 
 **图片展示**：
-- 销售记录卡片中新增商品图片区域
-- 图片来源：标品销售、盲袋发货的商品图片
-- 显示方式：最多显示3张图片，超过时显示"+N"标识
+- 销售记录卡片中新增销售凭证图片区域
+- 图片来源：销售记录中的`image_path`字段（销售时拍摄的客户记录图片）
+- 显示方式：显示销售凭证图片，无图片时不显示
 - 图片尺寸：48x48px，圆角设计
 
 **图片放大查看**：
@@ -1908,21 +1908,45 @@ php artisan cache:clear
 - `product_search`：商品搜索
 - `customer_name_search`：客户名称搜索
 - `time_range`：时间范围
-- `product_images`：商品图片
+- `sale_proof`：销售凭证
 
 **英文翻译**：
 - `search_filter`：Search Filter
 - `product_search`：Product Search
 - `customer_name_search`：Customer Name Search
 - `time_range`：Time Range
-- `product_images`：Product Images
+- `sale_proof`：Sale Proof
 
 **越南语翻译**：
 - `search_filter`：Bộ lọc tìm kiếm
 - `product_search`：Tìm kiếm sản phẩm
 - `customer_name_search`：Tìm kiếm tên khách hàng
 - `time_range`：Phạm vi thời gian
-- `product_images`：Hình ảnh sản phẩm
+- `sale_proof`：Chứng minh bán hàng
+
+### 14.5 分页翻译修复
+
+**问题描述**：
+移动端销售页面的分页组件中，"上一页"和"下一页"按钮没有正确显示翻译文本。
+
+**解决方案**：
+1. 创建分页语言文件：
+   - `resources/lang/zh_CN/pagination.php`：中文分页翻译
+   - `resources/lang/en/pagination.php`：英文分页翻译
+   - `resources/lang/vi/pagination.php`：越南语分页翻译
+
+2. 修改分页模板：
+   - 更新 `resources/views/vendor/pagination/tailwind.blade.php`
+   - 确保所有翻译键都使用 `pagination.` 前缀
+
+**翻译内容**：
+- `previous`：上一页/Previous/Trước
+- `next`：下一页/Next/Tiếp
+- `showing`：显示/Showing/Hiển thị
+- `to`：到/to/đến
+- `of`：共/of/trong tổng số
+- `results`：条记录/results/kết quả
+- `go_to_page`：跳转到第X页/Go to page X/Đi đến trang X
 
 ### 14.5 性能优化
 

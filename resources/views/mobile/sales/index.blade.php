@@ -211,52 +211,18 @@
                             </div>
                         </div>
 
-                        <!-- 商品图片 -->
-                        @php
-                            $images = collect();
-                            // 收集标品销售的商品图片
-                            if($sale->sale_details) {
-                                foreach($sale->sale_details as $detail) {
-                                    if(isset($detail->product_image) && $detail->product_image) {
-                                        $images->push([
-                                            'url' => $detail->product_image,
-                                            'name' => $detail->product_name
-                                        ]);
-                                    }
-                                }
-                            }
-                            // 收集盲袋发货的商品图片
-                            if($sale->blind_bag_deliveries) {
-                                foreach($sale->blind_bag_deliveries as $delivery) {
-                                    if(isset($delivery->delivery_product_image) && $delivery->delivery_product_image) {
-                                        $images->push([
-                                            'url' => $delivery->delivery_product_image,
-                                            'name' => $delivery->delivery_product_name
-                                        ]);
-                                    }
-                                }
-                            }
-                            $images = $images->unique('url');
-                        @endphp
-                        
-                        @if($images->count() > 0)
+                        <!-- 销售凭证图片 -->
+                        @if($sale->image_path)
                             <div class="mb-3">
-                                <div class="text-xs text-gray-600 mb-2"><x-lang key="mobile.sales.product_images"/>:</div>
+                                <div class="text-xs text-gray-600 mb-2"><x-lang key="mobile.sales.sale_proof"/>:</div>
                                 <div class="flex flex-wrap gap-2">
-                                    @foreach($images->take(3) as $index => $image)
-                                        <div class="relative">
-                                            <img src="{{ $image['url'] }}" 
-                                                 alt="{{ $image['name'] }}" 
-                                                 class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer" 
-                                                 onclick="openMobileImageModal('{{ $image['url'] }}', '{{ $image['name'] }}')"
-                                                 title="{{ $image['name'] }}">
-                                            @if($index == 2 && $images->count() > 3)
-                                                <div class="absolute -top-1 -right-1 bg-black bg-opacity-70 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                                    +{{ $images->count() - 3 }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
+                                    <div class="relative">
+                                        <img src="{{ Storage::url($sale->image_path) }}" 
+                                             alt="销售凭证" 
+                                             class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer" 
+                                             onclick="openMobileImageModal('{{ Storage::url($sale->image_path) }}', '销售凭证')"
+                                             title="销售凭证">
+                                    </div>
                                 </div>
                             </div>
                         @endif

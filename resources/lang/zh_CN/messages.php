@@ -293,8 +293,8 @@ return [
         'customer_name_placeholder' => '输入客户名称',
         'start_date' => '开始日期',
         'end_date' => '结束日期',
-        'product_images' => '商品图片',
-        'no_images' => '无图片',
+        'sale_proof' => '销售凭证',
+        'no_sale_proof' => '无销售凭证',
         'view_image' => '查看图片',
     ],
 

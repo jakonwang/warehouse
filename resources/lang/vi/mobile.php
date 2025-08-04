@@ -66,7 +66,7 @@ return [
         'max_amount_placeholder' => 'Số tiền tối đa',
         'search' => 'Tìm kiếm',
         'reset' => 'Đặt lại',
-        'product_images' => 'Hình ảnh sản phẩm',
+        'sale_proof' => 'Chứng minh bán hàng',
         // Trang chi tiết
         'details' => 'Chi tiết bán hàng',
         'order' => 'Đơn hàng',

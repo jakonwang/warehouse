@@ -66,7 +66,7 @@ return [
         'max_amount_placeholder' => '最大金额',
         'search' => '搜索',
         'reset' => '重置',
-        'product_images' => '商品图片',
+        'sale_proof' => '销售凭证',
         // 详情页面
         'details' => '销售详情',
         'order' => '订单',
