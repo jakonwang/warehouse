@@ -2,6 +2,81 @@
 
 @section('title', __('messages.sale.title'))
 
+@section('styles')
+<style>
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.9);
+    }
+    
+    .image-modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .image-modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+    }
+    
+    .image-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .product-image {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .product-image:hover {
+        transform: scale(1.1);
+    }
+    
+    .product-images-container {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .product-image-wrapper {
+        position: relative;
+    }
+    
+    .image-count {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-white py-10 px-2 md:px-8">
     <!-- 顶部大标题与渐变背景 -->
@@ -75,7 +150,8 @@
 
         <!-- 筛选栏 -->
         <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6">
-            <form action="{{ route('sales.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <form action="{{ route('sales.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- 仓库选择 -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.store_selection"/></label>
                     <select name="store_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
@@ -85,6 +161,8 @@
                         @endforeach
                     </select>
                 </div>
+                
+                <!-- 销售员选择 -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.salesperson"/></label>
                     <select name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
@@ -94,6 +172,20 @@
                         @endforeach
                     </select>
                 </div>
+                
+                <!-- 客户名称搜索 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.customer_name_search"/></label>
+                    <input type="text" name="customer_name" placeholder="<x-lang key="messages.sale.customer_name_placeholder"/>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" value="{{ request('customer_name') }}">
+                </div>
+                
+                <!-- 商品搜索 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.product_search"/></label>
+                    <input type="text" name="product_search" placeholder="<x-lang key="messages.sale.product_search_placeholder"/>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" value="{{ request('product_search') }}">
+                </div>
+                
+                <!-- 时间范围 -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.time_range"/></label>
                     <select name="period" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
@@ -103,6 +195,19 @@
                         <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}><x-lang key="messages.sale.this_month"/></option>
                     </select>
                 </div>
+                
+                <!-- 自定义时间范围 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.start_date"/></label>
+                    <input type="date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" value="{{ request('start_date') }}">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.end_date"/></label>
+                    <input type="date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" value="{{ request('end_date') }}">
+                </div>
+                
+                <!-- 金额范围 -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="messages.sale.amount_range"/></label>
                     <div class="flex space-x-2">
@@ -110,6 +215,8 @@
                         <input type="number" name="amount_max" placeholder="<x-lang key="messages.sale.max_amount"/>" class="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" value="{{ request('amount_max') }}">
                     </div>
                 </div>
+                
+                <!-- 搜索按钮 -->
                 <div class="flex items-end">
                     <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
                         <i class="bi bi-search mr-2"></i> <x-lang key="messages.sale.search"/>
@@ -132,8 +239,10 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.order_no"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.sales_mode"/></th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.product_images"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.salesperson_name"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.store"/></th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.customer_name"/></th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.total_amount"/></th>
                             @if(auth()->user()->canViewProfitAndCost())
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><x-lang key="messages.sale.profit"/></th>
@@ -159,8 +268,61 @@
                                     {{ $sale->sale_type_name }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="product-images-container">
+                                    @php
+                                        $images = collect();
+                                        // 收集标品销售的商品图片
+                                        foreach($sale->saleDetails as $detail) {
+                                            if($detail->product && $detail->product->image_url) {
+                                                $images->push([
+                                                    'url' => $detail->product->image_url,
+                                                    'name' => $detail->product->name
+                                                ]);
+                                            }
+                                        }
+                                        // 收集盲袋销售的商品图片
+                                        foreach($sale->blindBagSales as $blindBagSale) {
+                                            if($blindBagSale->product && $blindBagSale->product->image_url) {
+                                                $images->push([
+                                                    'url' => $blindBagSale->product->image_url,
+                                                    'name' => $blindBagSale->product->name
+                                                ]);
+                                            }
+                                        }
+                                        // 收集盲袋发货的商品图片
+                                        foreach($sale->blindBagDeliveries as $delivery) {
+                                            if($delivery->deliveryProduct && $delivery->deliveryProduct->image_url) {
+                                                $images->push([
+                                                    'url' => $delivery->deliveryProduct->image_url,
+                                                    'name' => $delivery->deliveryProduct->name
+                                                ]);
+                                            }
+                                        }
+                                        $images = $images->unique('url');
+                                    @endphp
+                                    
+                                    @if($images->count() > 0)
+                                        @foreach($images->take(3) as $index => $image)
+                                            <div class="product-image-wrapper">
+                                                <img src="{{ $image['url'] }}" 
+                                                     alt="{{ $image['name'] }}" 
+                                                     class="product-image" 
+                                                     onclick="openImageModal('{{ $image['url'] }}', '{{ $image['name'] }}')"
+                                                     title="{{ $image['name'] }}">
+                                                @if($index == 2 && $images->count() > 3)
+                                                    <div class="image-count">+{{ $images->count() - 3 }}</div>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <span class="text-gray-400 text-xs"><x-lang key="messages.sale.no_images"/></span>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $sale->user_name ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $sale->store_name ?? '-' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $sale->customer_name ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">¥{{ number_format($sale->total_amount, 2) }}</td>
                             @if(auth()->user()->canViewProfitAndCost())
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-bold">¥{{ number_format($sale->total_profit, 2) }}</td>
@@ -185,7 +347,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->canViewProfitAndCost() ? '9' : '7' }}" class="px-6 py-12 text-center text-gray-400">
+                            <td colspan="{{ auth()->user()->canViewProfitAndCost() ? '11' : '9' }}" class="px-6 py-12 text-center text-gray-400">
                                 <i class="bi bi-receipt text-4xl mb-4"></i>
                                 <div class="mt-2"><x-lang key="messages.sale.no_sales_records"/></div>
                             </td>
@@ -201,4 +363,39 @@
         </div>
     </div>
 </div>
+
+<!-- 图片放大模态框 -->
+<div id="imageModal" class="image-modal">
+    <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+    <img id="modalImage" class="image-modal-content">
+</div>
+
+<script>
+function openImageModal(imageUrl, imageName) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    modalImg.src = imageUrl;
+    modalImg.alt = imageName;
+    modal.classList.add('show');
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('show');
+}
+
+// 点击模态框背景关闭
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
+</script>
 @endsection 

@@ -1663,3 +1663,517 @@ chart.js:13 Uncaught TypeError: Cannot read properties of undefined (reading 'in
 - 使用`Array.isArray()`验证数据类型
 - 添加详细的调试日志
 - 在图表更新前进行数据验证
+
+## 13. 销售页面搜索功能增强 (2025-01-XX)
+
+### 13.1 功能概述
+
+为销售管理页面增加全面的搜索和筛选功能，同时增加商品图片显示和放大查看功能，提升用户体验和数据查找效率。
+
+### 13.2 新增功能
+
+#### 13.2.1 搜索筛选功能
+
+**商品搜索**：
+- 支持按商品名称或商品编码搜索销售记录
+- 搜索范围包括标品销售明细、盲袋销售、盲袋发货明细中的商品
+- 使用`whereHas`关联查询，支持模糊匹配
+
+**客户名称搜索**：
+- 支持按客户姓名搜索销售记录
+- 模糊匹配，支持部分姓名搜索
+- 基于`customer_name`字段
+
+**时间搜索**：
+- 预设时间范围：今天、本周、本月
+- 自定义时间范围：开始日期、结束日期选择
+- 使用Laravel日期查询方法
+
+**其他筛选条件**：
+- 仓库筛选：按仓库筛选销售记录
+- 销售员筛选：按销售员筛选销售记录
+- 金额范围：按销售金额范围筛选
+
+#### 13.2.2 商品图片显示功能
+
+**图片展示**：
+- 销售记录表格中新增"商品图片"列
+- 图片来源：标品销售、盲袋销售、盲袋发货的商品图片
+- 显示方式：最多显示3张图片，超过时显示"+N"标识
+- 图片尺寸：40x40px，圆角设计
+
+**图片放大查看**：
+- 点击图片可放大查看
+- 交互方式：点击图片打开模态框，点击背景或ESC键关闭
+- 样式设计：全屏黑色半透明背景，图片居中显示
+
+### 13.3 技术实现
+
+**控制器修改**：
+- `app/Http/Controllers/SaleController.php`：增加关联查询和搜索逻辑
+- 使用`with()`预加载关联数据，避免N+1查询问题
+- 实现多表关联搜索，支持商品名称和编码搜索
+
+**视图修改**：
+- `resources/views/sales/index.blade.php`：重新设计搜索表单和表格
+- 增加图片显示和模态框功能
+- 优化响应式布局和用户体验
+
+**样式设计**：
+- 图片样式：40x40px，圆角，悬停放大效果
+- 模态框样式：全屏覆盖，居中显示，平滑动画
+- 搜索表单：响应式网格布局，现代化设计
+
+**JavaScript交互**：
+- 图片模态框：打开/关闭功能
+- 键盘支持：ESC键关闭模态框
+- 事件处理：点击背景关闭，防止事件冒泡
+
+### 13.4 语言支持
+
+**新增翻译项**：
+- `product_search`：商品搜索
+- `product_search_placeholder`：输入商品名称或编码
+- `customer_name_search`：客户名称搜索
+- `customer_name_placeholder`：输入客户名称
+- `start_date`：开始日期
+- `end_date`：结束日期
+- `product_images`：商品图片
+- `no_images`：无图片
+- `view_image`：查看图片
+
+### 13.5 性能优化
+
+**数据库查询优化**：
+- 使用`with()`预加载关联数据
+- 合理使用索引，提高搜索性能
+- 分页查询，避免大量数据加载
+
+**前端优化**：
+- 图片懒加载（浏览器原生支持）
+- CSS动画使用`transform`属性
+- JavaScript事件委托，减少内存占用
+
+### 13.6 兼容性
+
+**浏览器兼容性**：
+- 支持现代浏览器（Chrome、Firefox、Safari、Edge）
+- CSS Grid和Flexbox布局
+- ES6+ JavaScript语法
+
+**响应式设计**：
+- 移动端友好的搜索表单布局
+- 图片显示适配不同屏幕尺寸
+- 模态框在全屏模式下正常工作
+
+### 13.7 部署注意事项
+
+**文件权限**：
+```bash
+chmod -R 755 storage/app/public
+chown -R www-data:www-data storage/app/public
+```
+
+**存储链接**：
+```bash
+php artisan storage:link
+```
+
+**缓存清理**：
+```bash
+php artisan config:clear
+php artisan view:clear
+php artisan cache:clear
+```
+
+### 13.8 测试建议
+
+**功能测试**：
+- 测试各种搜索条件的组合
+- 验证图片显示和放大功能
+- 检查分页功能是否正常
+
+**性能测试**：
+- 大量数据下的搜索性能
+- 图片加载性能
+- 内存使用情况
+
+**用户体验测试**：
+- 搜索表单的易用性
+- 图片查看的流畅性
+- 键盘操作的便利性
+
+### 13.9 后续优化建议
+
+**功能增强**：
+- 增加高级搜索功能（多条件组合）
+- 支持图片批量下载
+- 增加搜索历史记录
+
+**性能优化**：
+- 实现图片压缩和缩略图
+- 增加搜索结果缓存
+- 优化大数据量下的查询性能
+
+**用户体验**：
+- 增加搜索建议功能
+- 支持拖拽排序
+- 增加更多的快捷键支持
+
+### 13.10 修改文件清单
+
+**核心文件**：
+- `app/Http/Controllers/SaleController.php`：增加搜索逻辑和关联查询
+- `resources/views/sales/index.blade.php`：重新设计界面和增加图片功能
+- `resources/lang/zh_CN/messages.php`：增加新的翻译项
+
+**文档文件**：
+- `docs/sales-search-enhancement.md`：详细的功能文档
+
+**技术要点**：
+- 使用`whereHas`实现多表关联搜索
+- 预加载关联数据避免N+1查询
+- 响应式设计和现代化UI
+- 完整的图片查看交互体验
+
+## 14. 移动端销售页面搜索功能增强 (2025-01-XX)
+
+### 14.1 功能概述
+
+为移动端销售管理页面增加全面的搜索和筛选功能，同时增加商品图片显示和放大查看功能，提升移动端用户体验和数据查找效率。
+
+### 14.2 新增功能
+
+#### 14.2.1 搜索筛选功能
+
+**商品搜索**：
+- 支持按商品名称或商品编码搜索销售记录
+- 搜索范围包括标品销售明细、盲袋销售、盲袋发货明细中的商品
+- 使用`whereExists`子查询，支持模糊匹配
+
+**客户名称搜索**：
+- 支持按客户姓名搜索销售记录
+- 模糊匹配，支持部分姓名搜索
+- 基于`customer_name`字段
+
+**时间搜索**：
+- 预设时间范围：今天、本周、本月
+- 自定义时间范围：开始日期、结束日期选择
+- 使用Laravel日期查询方法
+
+**其他筛选条件**：
+- 仓库筛选：按仓库筛选销售记录
+- 销售员筛选：按销售员筛选销售记录
+- 金额范围：按销售金额范围筛选
+
+#### 14.2.2 商品图片显示功能
+
+**图片展示**：
+- 销售记录卡片中新增商品图片区域
+- 图片来源：标品销售、盲袋发货的商品图片
+- 显示方式：最多显示3张图片，超过时显示"+N"标识
+- 图片尺寸：48x48px，圆角设计
+
+**图片放大查看**：
+- 点击图片可放大查看
+- 交互方式：点击图片打开全屏模态框，点击背景或关闭按钮关闭
+- 样式设计：全屏黑色半透明背景，图片居中显示，自适应屏幕尺寸
+
+### 14.3 技术实现
+
+**控制器修改**：
+- `app/Http/Controllers/SaleController.php`：增加移动端搜索逻辑和图片数据获取
+- 使用`whereExists`子查询，避免复杂的JOIN操作
+- 实现多表关联搜索，支持商品名称和编码搜索
+
+**视图修改**：
+- `resources/views/mobile/sales/index.blade.php`：重新设计移动端搜索表单和图片显示
+- 增加移动端图片模态框功能
+- 优化移动端响应式布局和用户体验
+
+**样式设计**：
+- 移动端图片样式：48x48px，圆角，触摸友好
+- 移动端模态框样式：全屏覆盖，居中显示，触摸交互
+- 搜索表单：移动端友好的布局设计
+
+**JavaScript交互**：
+- 移动端图片模态框：打开/关闭功能
+- 触摸支持：点击背景关闭，防止误触
+- 事件处理：ESC键关闭，移动端键盘支持
+
+### 14.4 多语言支持
+
+**中文翻译**：
+- `search_filter`：搜索筛选
+- `product_search`：商品搜索
+- `customer_name_search`：客户名称搜索
+- `time_range`：时间范围
+- `product_images`：商品图片
+
+**英文翻译**：
+- `search_filter`：Search Filter
+- `product_search`：Product Search
+- `customer_name_search`：Customer Name Search
+- `time_range`：Time Range
+- `product_images`：Product Images
+
+**越南语翻译**：
+- `search_filter`：Bộ lọc tìm kiếm
+- `product_search`：Tìm kiếm sản phẩm
+- `customer_name_search`：Tìm kiếm tên khách hàng
+- `time_range`：Phạm vi thời gian
+- `product_images`：Hình ảnh sản phẩm
+
+### 14.5 性能优化
+
+**数据库查询优化**：
+- 使用`whereExists`子查询，避免复杂的JOIN操作
+- 合理使用索引，提高搜索性能
+- 分页查询，避免大量数据加载
+- 预加载关联数据，减少查询次数
+
+**移动端优化**：
+- 图片懒加载（浏览器原生支持）
+- CSS动画使用`transform`属性
+- JavaScript事件委托，减少内存占用
+- 响应式设计，适配不同屏幕尺寸
+
+### 14.6 兼容性
+
+**浏览器兼容性**：
+- 支持现代移动浏览器（Chrome Mobile、Safari Mobile、Firefox Mobile）
+- CSS Grid和Flexbox布局
+- ES6+ JavaScript语法
+- 触摸事件支持
+
+**设备兼容性**：
+- 支持iOS和Android设备
+- 适配不同屏幕尺寸（手机、平板）
+- 支持触摸操作和手势
+- 优化移动端网络性能
+
+### 14.7 部署注意事项
+
+**文件权限**：
+```bash
+chmod -R 755 storage/app/public
+chown -R www-data:www-data storage/app/public
+```
+
+**存储链接**：
+```bash
+php artisan storage:link
+```
+
+**缓存清理**：
+```bash
+php artisan config:clear
+php artisan view:clear
+php artisan cache:clear
+```
+
+**移动端优化**：
+- 确保图片文件大小适中，避免加载过慢
+- 测试移动端网络环境下的性能
+- 验证触摸交互的响应性
+
+### 14.8 测试建议
+
+**功能测试**：
+- 测试各种搜索条件的组合
+- 验证图片显示和放大功能
+- 检查分页功能是否正常
+- 测试移动端触摸交互
+
+**性能测试**：
+- 大量数据下的搜索性能
+- 图片加载性能
+- 内存使用情况
+- 网络请求优化
+
+**用户体验测试**：
+- 搜索表单的易用性
+- 图片查看的流畅性
+- 触摸操作的便利性
+- 响应式布局的适配性
+
+### 14.9 后续优化建议
+
+**功能增强**：
+- 增加高级搜索功能（多条件组合）
+- 支持图片批量下载
+- 增加搜索历史记录
+- 支持语音搜索
+
+**性能优化**：
+- 实现图片压缩和缩略图
+- 增加搜索结果缓存
+- 优化大数据量下的查询性能
+- 实现离线搜索功能
+
+**用户体验**：
+- 增加搜索建议功能
+- 支持拖拽排序
+- 增加更多的触摸手势支持
+- 优化移动端键盘交互
+
+### 14.10 修改文件清单
+
+**核心文件**：
+- `app/Http/Controllers/SaleController.php`：增加移动端搜索逻辑和图片数据获取
+- `resources/views/mobile/sales/index.blade.php`：重新设计移动端界面和增加图片功能
+
+**语言文件**：
+- `resources/lang/zh_CN/mobile.php`：增加中文翻译
+- `resources/lang/en/mobile.php`：增加英文翻译
+- `resources/lang/vi/mobile.php`：增加越南语翻译
+
+**文档文件**：
+- `docs/mobile-sales-search-enhancement.md`：详细的移动端功能文档
+
+**技术要点**：
+- 使用`whereExists`子查询实现多表关联搜索
+- 移动端友好的触摸交互设计
+- 响应式布局适配不同屏幕尺寸
+- 完整的多语言支持（中文、英文、越南语）
+
+## 15. 退货界面商品显示修复 (2025-01-XX)
+
+### 15.1 问题描述
+
+在退货管理界面（`/returns/create` 和 `/mobile/returns`）中，商品列表显示的是所有商品，而不是当前仓库分配的商品。这导致用户可以看到和选择不属于当前仓库的商品进行退货操作。
+
+### 15.2 修复内容
+
+#### 15.2.1 后端控制器修复
+
+**修复的方法**：
+- `ReturnController::create()` - 后台退货创建
+- `ReturnController::edit()` - 后台退货编辑
+- `ReturnController::mobileCreate()` - 移动端退货创建
+- `ReturnController::mobileIndex()` - 移动端退货列表
+- `ReturnController::mobileEdit()` - 移动端退货编辑
+
+**修复逻辑**：
+```php
+// 获取当前仓库分配的商品
+$products = collect();
+if ($storeId) {
+    $currentStore = $stores->where('id', $storeId)->first();
+    if ($currentStore) {
+        $products = $currentStore->availableStandardProducts()->get();
+    }
+}
+```
+
+#### 15.2.2 前端界面优化
+
+**后台退货创建页面**：
+- 将"当前仓库显示"改为"仓库选择"下拉框
+- 添加仓库变化的JavaScript事件处理
+- 实现动态加载商品功能
+- 使用Alpine.js实现响应式商品列表
+
+**移动端退货创建页面**：
+- 添加仓库选择的change事件
+- 实现动态加载商品功能
+- 添加仓库未选择时的提示
+- 添加加载中状态显示
+- 添加无商品时的提示
+
+#### 15.2.3 API接口利用
+
+**使用的API接口**：
+- 路由：`/api/stores/{store}/products`
+- 控制器：`StoreController@getProducts`
+- 返回格式：`standard_products` 和 `blind_bag_products`
+
+**权限控制**：
+- 检查用户是否有权限访问该仓库
+- 只返回用户有权限的仓库的商品
+
+### 15.3 技术实现
+
+#### 15.3.1 数据库查询优化
+- 使用 `availableStandardProducts()` 方法获取仓库分配的商品
+- 避免查询所有商品，提高性能
+- 确保只显示当前仓库有权限的商品
+
+#### 15.3.2 前端交互优化
+- 动态加载商品，提升用户体验
+- 添加加载状态和错误处理
+- 响应式设计，适配不同设备
+
+#### 15.3.3 权限控制
+- 后端验证用户仓库权限
+- 前端根据权限显示相应内容
+- 确保数据安全性
+
+### 15.4 修改文件清单
+
+**控制器文件**：
+- `app/Http/Controllers/ReturnController.php`
+
+**视图文件**：
+- `resources/views/returns/create.blade.php`
+- `resources/views/returns/edit.blade.php`
+- `resources/views/mobile/returns/create.blade.php`
+- `resources/views/mobile/returns/edit.blade.php`
+
+**文档文件**：
+- `docs/returns-store-products-fix.md`
+
+### 15.5 测试建议
+
+#### 15.5.1 功能测试
+- 测试不同仓库的商品显示
+- 测试仓库切换功能
+- 测试无商品仓库的提示
+- 测试权限控制
+
+#### 15.5.2 性能测试
+- 测试大量商品时的加载性能
+- 测试网络延迟时的用户体验
+- 测试移动端性能
+
+#### 15.5.3 兼容性测试
+- 测试不同浏览器的兼容性
+- 测试移动端设备的兼容性
+- 测试不同屏幕尺寸的适配
+
+### 15.6 部署注意事项
+
+#### 15.6.1 缓存清理
+```bash
+php artisan config:clear
+php artisan view:clear
+php artisan cache:clear
+```
+
+#### 15.6.2 权限检查
+- 确保API路由权限正确
+- 确保用户仓库权限配置正确
+- 测试权限边界情况
+
+### 15.7 后续优化建议
+
+#### 15.7.1 功能增强
+- 添加商品搜索功能
+- 添加商品分类筛选
+- 添加批量退货功能
+
+#### 15.7.2 性能优化
+- 实现商品列表缓存
+- 优化API响应速度
+- 添加前端数据缓存
+
+#### 15.7.3 用户体验
+- 添加商品图片显示
+- 优化移动端交互
+- 添加操作提示和帮助
+
+**技术要点**：
+- 使用仓库关联查询获取分配的商品
+- 动态加载商品提升用户体验
+- 完善的权限控制机制
+- 响应式设计适配多设备

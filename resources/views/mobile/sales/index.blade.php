@@ -20,6 +20,104 @@
         </div>
     @endif
 
+    <!-- 搜索筛选 -->
+    <div class="card p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">🔍 <x-lang key="mobile.sales.search_filter"/></h2>
+        
+        <form action="{{ route('mobile.sales.index') }}" method="GET" class="space-y-4">
+            <!-- 商品搜索 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.product_search"/></label>
+                <input type="text" name="product_search" placeholder="<x-lang key="mobile.sales.product_search_placeholder"/>" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                       value="{{ request('product_search') }}">
+            </div>
+
+            <!-- 客户名称搜索 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.customer_name_search"/></label>
+                <input type="text" name="customer_name" placeholder="<x-lang key="mobile.sales.customer_name_placeholder"/>" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                       value="{{ request('customer_name') }}">
+            </div>
+
+            <!-- 仓库选择 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.store_selection"/></label>
+                <select name="store_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value=""><x-lang key="mobile.sales.all_stores"/></option>
+                    @foreach($stores ?? [] as $store)
+                        <option value="{{ $store->id }}" {{ request('store_id') == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- 销售员选择 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.salesperson"/></label>
+                <select name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value=""><x-lang key="mobile.sales.all_salespeople"/></option>
+                    @foreach($users ?? [] as $user)
+                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->real_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- 时间范围 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.time_range"/></label>
+                <select name="period" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value=""><x-lang key="mobile.sales.all_time"/></option>
+                    <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}><x-lang key="mobile.sales.today"/></option>
+                    <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}><x-lang key="mobile.sales.this_week"/></option>
+                    <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}><x-lang key="mobile.sales.this_month"/></option>
+                </select>
+            </div>
+
+            <!-- 自定义时间范围 -->
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.start_date"/></label>
+                    <input type="date" name="start_date" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           value="{{ request('start_date') }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.end_date"/></label>
+                    <input type="date" name="end_date" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           value="{{ request('end_date') }}">
+                </div>
+            </div>
+
+            <!-- 金额范围 -->
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.min_amount"/></label>
+                    <input type="number" name="amount_min" placeholder="<x-lang key="mobile.sales.min_amount_placeholder"/>" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           value="{{ request('amount_min') }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"><x-lang key="mobile.sales.max_amount"/></label>
+                    <input type="number" name="amount_max" placeholder="<x-lang key="mobile.sales.max_amount_placeholder"/>" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           value="{{ request('amount_max') }}">
+                </div>
+            </div>
+
+            <!-- 搜索按钮 -->
+            <div class="flex space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    <i class="bi bi-search mr-2"></i> <x-lang key="mobile.sales.search"/>
+                </button>
+                <a href="{{ route('mobile.sales.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                    <x-lang key="mobile.sales.reset"/>
+                </a>
+            </div>
+        </form>
+    </div>
+
     <!-- 快捷操作 -->
     <div class="card p-6">
         <div class="space-y-3">
@@ -55,7 +153,7 @@
         </div>
     </div>
 
-    <!-- 销售记录列�?-->
+    <!-- 销售记录列�?-->
     @if($sales->count() > 0)
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 <x-lang key="mobile.sales.record_list"/></h2>
@@ -74,7 +172,7 @@
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            🛍�?<x-lang key="mobile.sales.standard"/>
+                                            🛍�?<x-lang key="mobile.sales.standard"/>
                                         </span>
                                     @endif
                                 </div>
@@ -113,7 +211,57 @@
                             </div>
                         </div>
 
-                        <!-- 销售明�?-->
+                        <!-- 商品图片 -->
+                        @php
+                            $images = collect();
+                            // 收集标品销售的商品图片
+                            if($sale->sale_details) {
+                                foreach($sale->sale_details as $detail) {
+                                    if(isset($detail->product_image) && $detail->product_image) {
+                                        $images->push([
+                                            'url' => $detail->product_image,
+                                            'name' => $detail->product_name
+                                        ]);
+                                    }
+                                }
+                            }
+                            // 收集盲袋发货的商品图片
+                            if($sale->blind_bag_deliveries) {
+                                foreach($sale->blind_bag_deliveries as $delivery) {
+                                    if(isset($delivery->delivery_product_image) && $delivery->delivery_product_image) {
+                                        $images->push([
+                                            'url' => $delivery->delivery_product_image,
+                                            'name' => $delivery->delivery_product_name
+                                        ]);
+                                    }
+                                }
+                            }
+                            $images = $images->unique('url');
+                        @endphp
+                        
+                        @if($images->count() > 0)
+                            <div class="mb-3">
+                                <div class="text-xs text-gray-600 mb-2"><x-lang key="mobile.sales.product_images"/>:</div>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach($images->take(3) as $index => $image)
+                                        <div class="relative">
+                                            <img src="{{ $image['url'] }}" 
+                                                 alt="{{ $image['name'] }}" 
+                                                 class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer" 
+                                                 onclick="openMobileImageModal('{{ $image['url'] }}', '{{ $image['name'] }}')"
+                                                 title="{{ $image['name'] }}">
+                                            @if($index == 2 && $images->count() > 3)
+                                                <div class="absolute -top-1 -right-1 bg-black bg-opacity-70 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                    +{{ $images->count() - 3 }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- 销售明细 -->
                         @if($sale->sale_details && count($sale->sale_details) > 0)
                             <div class="flex flex-wrap gap-1 mb-3">
                                 @foreach($sale->sale_details as $detail)
@@ -159,7 +307,7 @@
             @endif
         </div>
     @else
-        <!-- 空状�?-->
+        <!-- 空状�?-->
         <div class="card p-8 text-center">
             <div class="text-6xl mb-4">📊</div>
             <h3 class="text-lg font-semibold text-gray-900 mb-2"><x-lang key="mobile.sales.no_records"/></h3>
@@ -210,4 +358,39 @@
     @endif
     <div class="h-24"></div>
 </div>
+
+<!-- 移动端图片模态框 -->
+<div id="mobileImageModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-90" onclick="closeMobileImageModal()"></div>
+    <div class="relative flex items-center justify-center h-full">
+        <img id="mobileModalImage" class="max-w-full max-h-full object-contain" alt="">
+        <button onclick="closeMobileImageModal()" class="absolute top-4 right-4 text-white text-2xl font-bold bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center">
+            ×
+        </button>
+    </div>
+</div>
+
+<script>
+function openMobileImageModal(imageUrl, imageName) {
+    const modal = document.getElementById('mobileImageModal');
+    const modalImg = document.getElementById('mobileModalImage');
+    modalImg.src = imageUrl;
+    modalImg.alt = imageName;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileImageModal() {
+    const modal = document.getElementById('mobileImageModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeMobileImageModal();
+    }
+});
+</script>
 @endsection 

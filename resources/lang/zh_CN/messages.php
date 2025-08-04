@@ -287,6 +287,15 @@ return [
         'view_details' => '销售记录详情',
         'view_details_description' => '查看销售记录的详细信息',
         'back_to_list' => '返回列表',
+        'product_search' => '商品搜索',
+        'product_search_placeholder' => '输入商品名称或编码',
+        'customer_name_search' => '客户名称搜索',
+        'customer_name_placeholder' => '输入客户名称',
+        'start_date' => '开始日期',
+        'end_date' => '结束日期',
+        'product_images' => '商品图片',
+        'no_images' => '无图片',
+        'view_image' => '查看图片',
     ],
 
     // Categories

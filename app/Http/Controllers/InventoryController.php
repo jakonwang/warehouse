@@ -26,7 +26,7 @@ class InventoryController extends Controller
     /**
      * 显示库存列表
      */
-    public function index()
+    public function index(Request $request)
     {
         $currentStoreId = session('current_store_id');
         $user = auth()->user();
@@ -45,8 +45,45 @@ class InventoryController extends Controller
             $baseQuery->whereIn('store_id', $userStoreIds);
         }
         
+        // 应用搜索条件
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+            $baseQuery->whereHas('product', function($query) use ($keyword) {
+                $query->where('name', 'like', "%{$keyword}%")
+                      ->orWhere('code', 'like', "%{$keyword}%");
+            });
+        }
+        
+        // 应用状态筛选
+        if ($request->filled('status')) {
+            switch ($request->status) {
+                case 'low':
+                    $baseQuery->where('quantity', '<=', DB::raw('min_quantity'))
+                              ->where('quantity', '>', 0);
+                    break;
+                case 'out':
+                    $baseQuery->where('quantity', 0);
+                    break;
+                case 'normal':
+                    $baseQuery->where('quantity', '>', DB::raw('min_quantity'));
+                    break;
+                case 'overstock':
+                    $baseQuery->where('quantity', '>=', DB::raw('max_quantity'));
+                    break;
+            }
+        }
+        
+        // 应用数量范围筛选
+        if ($request->filled('min_quantity')) {
+            $baseQuery->where('quantity', '>=', $request->min_quantity);
+        }
+        
+        if ($request->filled('max_quantity')) {
+            $baseQuery->where('quantity', '<=', $request->max_quantity);
+        }
+        
         // 获取分页数据（用于显示列表）
-        $inventory = $baseQuery->orderBy('product_id')->paginate(10);
+        $inventory = $baseQuery->orderBy('product_id')->paginate(10)->withQueryString();
         
         // 获取统计数据（基于全部数据，不分页）
         $statsQuery = Inventory::with(['product:id,cost_price'])

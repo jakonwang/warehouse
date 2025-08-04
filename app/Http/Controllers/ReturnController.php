@@ -70,9 +70,18 @@ class ReturnController extends Controller
      */
     public function create()
     {
-        $products = Product::active()->where('type', 'standard')->get();
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true);
         $storeId = request('store_id', session('current_store_id'));
+        
+        // 获取当前仓库分配的商品
+        $products = collect();
+        if ($storeId) {
+            $currentStore = $stores->where('id', $storeId)->first();
+            if ($currentStore) {
+                $products = $currentStore->availableStandardProducts()->get();
+            }
+        }
+        
         return view('returns.create', compact('products', 'stores', 'storeId'));
     }
 
@@ -191,11 +200,15 @@ class ReturnController extends Controller
     public function edit($id)
     {
         $returnRecord = ReturnRecord::findOrFail($id);
-        $products = Product::where('is_active', true)
-            ->where('type', Product::TYPE_STANDARD)
-            ->orderBy('sort_order')
-            ->get();
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
+        
+        // 获取当前仓库分配的商品
+        $products = collect();
+        $currentStore = $stores->where('id', $returnRecord->store_id)->first();
+        if ($currentStore) {
+            $products = $currentStore->availableStandardProducts()->get();
+        }
+        
         return view('returns.edit', compact('returnRecord', 'products', 'stores'));
     }
 
@@ -269,12 +282,18 @@ class ReturnController extends Controller
     public function mobileCreate()
     {
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
-        $products = Product::where('type', 'standard')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+        $storeId = request('store_id') ?? session('current_store_id');
         
-        return view('mobile.returns.create', compact('stores', 'products'));
+        // 获取当前仓库分配的商品
+        $products = collect();
+        if ($storeId) {
+            $currentStore = $stores->where('id', $storeId)->first();
+            if ($currentStore) {
+                $products = $currentStore->availableStandardProducts()->get();
+            }
+        }
+        
+        return view('mobile.returns.create', compact('stores', 'products', 'storeId'));
     }
 
     /**
@@ -289,11 +308,14 @@ class ReturnController extends Controller
         // 获取用户可访问的仓库
         $stores = $user->getAccessibleStores()->where('is_active', true)->values();
         
-        // 获取标准商品（非盲袋）
-        $products = Product::where('type', 'standard')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+        // 获取当前仓库分配的商品
+        $products = collect();
+        if ($storeId) {
+            $currentStore = $stores->where('id', $storeId)->first();
+            if ($currentStore) {
+                $products = $currentStore->availableStandardProducts()->get();
+            }
+        }
         
         // 获取最近的退货记录
         $query = ReturnRecord::with(['user', 'store', 'returnDetails.product'])
@@ -418,11 +440,15 @@ class ReturnController extends Controller
         if (!auth()->user()->canAccessStore($returnRecord->store_id)) {
             abort(403, '无权限操作该仓库');
         }
-        $products = Product::where('is_active', true)
-            ->where('type', Product::TYPE_STANDARD)
-            ->orderBy('sort_order')
-            ->get();
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
+        
+        // 获取当前仓库分配的商品
+        $products = collect();
+        $currentStore = $stores->where('id', $returnRecord->store_id)->first();
+        if ($currentStore) {
+            $products = $currentStore->availableStandardProducts()->get();
+        }
+        
         return view('mobile.returns.edit', compact('returnRecord', 'products', 'stores'));
     }
 

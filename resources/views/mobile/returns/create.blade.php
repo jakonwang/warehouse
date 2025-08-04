@@ -22,7 +22,7 @@
                     @php $currentStore = $stores->firstWhere('id', $storeId); @endphp
                     <div>
                         <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.returns.current_store"/></label>
-                        <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border bg-gray-50 text-gray-700">
+                        <select name="store_id" id="store-select" class="form-input w-full px-3 py-2 rounded-lg border bg-gray-50 text-gray-700" onchange="onStoreChange()">
                             <option value=""><x-lang key="mobile.returns.please_select"/></option>
                             @foreach($stores as $store)
                                 <option value="{{ $store->id }}" @if($storeId == $store->id) selected @endif>{{ $store->name }}</option>
@@ -93,9 +93,22 @@
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 <x-lang key="mobile.returns.return_products"/></h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- 仓库未选择时的提示 -->
+                    <div id="no-store-message" class="text-center py-8" style="display: none;">
+                        <i class="bi bi-box text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-500">请先选择仓库以查看可退货的商品</p>
+                    </div>
+                    
+                    <!-- 加载中状态 -->
+                    <div id="loading-products" class="text-center py-8" style="display: none;">
+                        <i class="bi bi-arrow-clockwise animate-spin text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-500">正在加载商品...</p>
+                    </div>
+                    
+                    <!-- 商品列表 -->
+                    <div id="products-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         @foreach($products as $product)
-                            <div class="border rounded-lg p-4 bg-gray-50">
+                            <div class="border rounded-lg p-4 bg-gray-50 product-item" data-store-id="{{ $storeId }}">
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="font-medium text-gray-900">{{ $product->name }}</h3>
                                     <span class="badge-warning text-xs px-2 py-1 rounded-full">
@@ -116,6 +129,12 @@
                                 <p class="text-xs text-gray-500 mt-1 text-center"><x-lang key="mobile.returns.return_quantity"/></p>
                             </div>
                         @endforeach
+                        
+                        <!-- 无商品时的提示 -->
+                        <div id="no-products-message" class="col-span-2 text-center py-8" style="display: none;">
+                            <i class="bi bi-box-seam text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500">该仓库暂无可退货的商品</p>
+                        </div>
                     </div>
                 </div>
 
@@ -226,6 +245,96 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 初始计算
     updateTotals();
+    
+    // 如果有初始仓库，检查是否需要显示商品
+    const storeSelect = document.getElementById('store-select');
+    if (storeSelect.value) {
+        onStoreChange();
+    }
 });
+
+// 仓库变化处理函数
+async function onStoreChange() {
+    const storeSelect = document.getElementById('store-select');
+    const storeId = storeSelect.value;
+    const noStoreMessage = document.getElementById('no-store-message');
+    const loadingProducts = document.getElementById('loading-products');
+    const productsContainer = document.getElementById('products-container');
+    const noProductsMessage = document.getElementById('no-products-message');
+    
+    // 隐藏所有状态
+    noStoreMessage.style.display = 'none';
+    loadingProducts.style.display = 'none';
+    productsContainer.style.display = 'none';
+    noProductsMessage.style.display = 'none';
+    
+    if (!storeId) {
+        noStoreMessage.style.display = 'block';
+        return;
+    }
+    
+    loadingProducts.style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/stores/${storeId}/products`);
+        if (response.ok) {
+            const data = await response.json();
+            const products = data.standard_products || [];
+            
+            if (products.length === 0) {
+                noProductsMessage.style.display = 'block';
+            } else {
+                // 清空现有商品
+                productsContainer.innerHTML = '';
+                
+                // 添加新商品
+                products.forEach(product => {
+                    const productHtml = `
+                        <div class="border rounded-lg p-4 bg-gray-50 product-item" data-store-id="${storeId}">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-medium text-gray-900">${product.name}</h3>
+                                <span class="badge-warning text-xs px-2 py-1 rounded-full">
+                                    价格: ¥${parseFloat(product.price).toFixed(2)}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-600">退货数量:</label>
+                                <input type="number" name="products[${product.id}][quantity]" 
+                                       min="0" max="999" value="0"
+                                       class="form-input w-20 px-2 py-1 rounded border text-center"
+                                       data-product-id="${product.id}"
+                                       data-product-price="${product.price}">
+                                <input type="hidden" name="products[${product.id}][id]" value="${product.id}">
+                            </div>
+                            
+                            <p class="text-xs text-gray-500 mt-1 text-center">退货数量</p>
+                        </div>
+                    `;
+                    productsContainer.innerHTML += productHtml;
+                });
+                
+                productsContainer.style.display = 'grid';
+                
+                // 重新绑定事件
+                bindQuantityEvents();
+            }
+        } else {
+            console.error('Failed to load products');
+            noProductsMessage.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error loading products:', error);
+        noProductsMessage.style.display = 'block';
+    }
+}
+
+// 绑定数量输入事件
+function bindQuantityEvents() {
+    const quantityInputs = document.querySelectorAll('input[name*="[quantity]"]');
+    quantityInputs.forEach(input => {
+        input.addEventListener('input', updateTotals);
+    });
+}
 </script>
 @endsection 

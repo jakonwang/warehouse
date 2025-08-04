@@ -140,6 +140,19 @@
                 <div class="flex items-center space-x-4">
                     <h3 class="text-xl font-semibold text-gray-900"><x-lang key="messages.inventory.inventory_list"/></h3>
                     <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">{{ $inventory->total() }} <x-lang key="messages.inventory.items"/></span>
+                    
+                    @if(request('keyword') || request('status') || request('min_quantity') || request('max_quantity'))
+                        <div class="flex items-center space-x-2 text-sm text-gray-600">
+                            <i class="bi bi-funnel"></i>
+                            <span>筛选结果</span>
+                            @if(request('keyword'))
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded">关键词: {{ request('keyword') }}</span>
+                            @endif
+                            @if(request('status'))
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded">状态: {{ request('status') }}</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
                 
                 <div class="flex items-center space-x-3">
@@ -173,7 +186,7 @@
             
             <!-- 高级筛选 -->
             <div class="mt-4">
-                <form class="flex flex-wrap gap-3 items-center">
+                <form method="GET" action="{{ route('inventory.index') }}" class="flex flex-wrap gap-3 items-center">
                     <div class="flex-1 min-w-64">
                         <input type="text" name="keyword" placeholder="<x-lang key="messages.inventory.search_placeholder"/>" 
                                class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" 
@@ -199,6 +212,12 @@
                     <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-all duration-200">
                         <i class="bi bi-search mr-1"></i><x-lang key="messages.inventory.search"/>
                     </button>
+                    
+                    @if(request('keyword') || request('status') || request('min_quantity') || request('max_quantity'))
+                        <a href="{{ route('inventory.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-all duration-200">
+                            <i class="bi bi-x-circle mr-1"></i>清除筛选
+                        </a>
+                    @endif
                 </form>
             </div>
         </div>

@@ -24,11 +24,78 @@ class SaleController extends Controller
 
         $query = \App\Models\Sale::with([
             'user:id,real_name',
-            'store:id,name'
+            'store:id,name',
+            'saleDetails.product:id,name,image',
+            'blindBagSales.product:id,name,image',
+            'blindBagDeliveries.deliveryProduct:id,name,image'
         ])->whereIn('store_id', $userStoreIds);
 
+        // 仓库筛选
         if ($storeId) {
             $query->where('store_id', $storeId);
+        }
+
+        // 销售员筛选
+        if (request('user_id')) {
+            $query->where('user_id', request('user_id'));
+        }
+
+        // 客户名称搜索
+        if (request('customer_name')) {
+            $query->where('customer_name', 'like', '%' . request('customer_name') . '%');
+        }
+
+        // 时间范围筛选
+        if (request('period')) {
+            switch (request('period')) {
+                case 'today':
+                    $query->whereDate('created_at', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                    break;
+            }
+        }
+
+        // 自定义时间范围
+        if (request('start_date')) {
+            $query->whereDate('created_at', '>=', request('start_date'));
+        }
+        if (request('end_date')) {
+            $query->whereDate('created_at', '<=', request('end_date'));
+        }
+
+        // 金额范围筛选
+        if (request('amount_min')) {
+            $query->where('total_amount', '>=', request('amount_min'));
+        }
+        if (request('amount_max')) {
+            $query->where('total_amount', '<=', request('amount_max'));
+        }
+
+        // 商品搜索
+        if (request('product_search')) {
+            $productSearch = request('product_search');
+            $query->where(function($q) use ($productSearch) {
+                // 搜索标品销售明细中的商品
+                $q->whereHas('saleDetails.product', function($productQuery) use ($productSearch) {
+                    $productQuery->where('name', 'like', '%' . $productSearch . '%')
+                                ->orWhere('code', 'like', '%' . $productSearch . '%');
+                })
+                // 搜索盲袋销售中的商品
+                ->orWhereHas('blindBagSales.product', function($productQuery) use ($productSearch) {
+                    $productQuery->where('name', 'like', '%' . $productSearch . '%')
+                                ->orWhere('code', 'like', '%' . $productSearch . '%');
+                })
+                // 搜索盲袋发货明细中的商品
+                ->orWhereHas('blindBagDeliveries.deliveryProduct', function($productQuery) use ($productSearch) {
+                    $productQuery->where('name', 'like', '%' . $productSearch . '%')
+                                ->orWhere('code', 'like', '%' . $productSearch . '%');
+                });
+            });
         }
 
         $sales = $query->orderBy('created_at', 'desc')->paginate(10);
@@ -46,7 +113,11 @@ class SaleController extends Controller
         $todayOrders = $todayStats->count();
         $avgProfitRate = $todayStats->count() > 0 ? $todayStats->avg('profit_rate') : 0;
 
-        return view('sales.index', compact('sales', 'todaySales', 'todayProfit', 'todayOrders', 'avgProfitRate'));
+        // 获取所有可用的仓库和用户（用于筛选）
+        $stores = auth()->user()->getAccessibleStores();
+        $users = \App\Models\User::whereIn('id', \App\Models\Sale::whereIn('store_id', $userStoreIds)->distinct()->pluck('user_id'))->get();
+
+        return view('sales.index', compact('sales', 'todaySales', 'todayProfit', 'todayOrders', 'avgProfitRate', 'stores', 'users'));
     }
 
     /**
@@ -432,7 +503,7 @@ class SaleController extends Controller
         // 使用 DB 查询替代 Eloquent 关系查询
         $userStoreIds = auth()->user()->getAccessibleStores()->pluck('id')->toArray();
         
-        $salesData = DB::table('sales')
+        $query = DB::table('sales')
             ->leftJoin('users', 'sales.user_id', '=', 'users.id')
             ->leftJoin('stores', 'sales.store_id', '=', 'stores.id')
             ->select(
@@ -440,9 +511,95 @@ class SaleController extends Controller
                 'users.real_name as user_name',
                 'stores.name as store_name'
             )
-            ->whereIn('sales.store_id', $userStoreIds)
-            ->orderBy('sales.created_at', 'desc')
-            ->paginate(10);
+            ->whereIn('sales.store_id', $userStoreIds);
+
+        // 仓库筛选
+        if (request('store_id')) {
+            $query->where('sales.store_id', request('store_id'));
+        }
+
+        // 销售员筛选
+        if (request('user_id')) {
+            $query->where('sales.user_id', request('user_id'));
+        }
+
+        // 客户名称搜索
+        if (request('customer_name')) {
+            $query->where('sales.customer_name', 'like', '%' . request('customer_name') . '%');
+        }
+
+        // 时间范围筛选
+        if (request('period')) {
+            switch (request('period')) {
+                case 'today':
+                    $query->whereDate('sales.created_at', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('sales.created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereBetween('sales.created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                    break;
+            }
+        }
+
+        // 自定义时间范围
+        if (request('start_date')) {
+            $query->whereDate('sales.created_at', '>=', request('start_date'));
+        }
+        if (request('end_date')) {
+            $query->whereDate('sales.created_at', '<=', request('end_date'));
+        }
+
+        // 金额范围筛选
+        if (request('amount_min')) {
+            $query->where('sales.total_amount', '>=', request('amount_min'));
+        }
+        if (request('amount_max')) {
+            $query->where('sales.total_amount', '<=', request('amount_max'));
+        }
+
+        // 商品搜索
+        if (request('product_search')) {
+            $productSearch = request('product_search');
+            $query->where(function($q) use ($productSearch) {
+                // 搜索标品销售明细中的商品
+                $q->whereExists(function($subQuery) use ($productSearch) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('sale_details')
+                        ->join('products', 'sale_details.product_id', '=', 'products.id')
+                        ->whereRaw('sale_details.sale_id = sales.id')
+                        ->where(function($productQuery) use ($productSearch) {
+                            $productQuery->where('products.name', 'like', '%' . $productSearch . '%')
+                                        ->orWhere('products.code', 'like', '%' . $productSearch . '%');
+                        });
+                })
+                // 搜索盲袋销售中的商品
+                ->orWhereExists(function($subQuery) use ($productSearch) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('blind_bag_sales')
+                        ->join('products', 'blind_bag_sales.product_id', '=', 'products.id')
+                        ->whereRaw('blind_bag_sales.sale_id = sales.id')
+                        ->where(function($productQuery) use ($productSearch) {
+                            $productQuery->where('products.name', 'like', '%' . $productSearch . '%')
+                                        ->orWhere('products.code', 'like', '%' . $productSearch . '%');
+                        });
+                })
+                // 搜索盲袋发货明细中的商品
+                ->orWhereExists(function($subQuery) use ($productSearch) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('blind_bag_deliveries')
+                        ->join('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
+                        ->whereRaw('blind_bag_deliveries.sale_id = sales.id')
+                        ->where(function($productQuery) use ($productSearch) {
+                            $productQuery->where('products.name', 'like', '%' . $productSearch . '%')
+                                        ->orWhere('products.code', 'like', '%' . $productSearch . '%');
+                        });
+                });
+            });
+        }
+
+        $salesData = $query->orderBy('sales.created_at', 'desc')->paginate(10);
 
         // 获取销售详情和盲袋发货信息
         $saleIds = $salesData->pluck('id')->toArray();
@@ -456,7 +613,8 @@ class SaleController extends Controller
                 ->select(
                     'sale_details.*',
                     'products.name as product_name',
-                    'products.code as product_code'
+                    'products.code as product_code',
+                    'products.image as product_image'
                 )
                 ->whereIn('sale_details.sale_id', $saleIds)
                 ->get();
@@ -470,7 +628,8 @@ class SaleController extends Controller
                 ->leftJoin('products', 'blind_bag_deliveries.delivery_product_id', '=', 'products.id')
                 ->select(
                     'blind_bag_deliveries.*',
-                    'products.name as delivery_product_name'
+                    'products.name as delivery_product_name',
+                    'products.image as delivery_product_image'
                 )
                 ->whereIn('blind_bag_deliveries.sale_id', $saleIds)
                 ->get();
@@ -495,7 +654,14 @@ class SaleController extends Controller
             $sale->blind_bag_deliveries = $blindBagDeliveries[$sale->id] ?? [];
         }
 
-        return view('mobile.sales.index', compact('sales'));
+        // 获取筛选数据
+        $stores = auth()->user()->getAccessibleStores();
+        $users = DB::table('users')
+            ->whereIn('id', DB::table('sales')->whereIn('store_id', $userStoreIds)->distinct()->pluck('user_id'))
+            ->select('id', 'real_name')
+            ->get();
+
+        return view('mobile.sales.index', compact('sales', 'stores', 'users'));
     }
 
     /**

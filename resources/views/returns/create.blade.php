@@ -42,17 +42,18 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-6">基本信息</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- 当前仓库显示 -->
+                    <!-- 仓库选择 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">当前仓库</label>
-                        <div class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
-                            @if($storeId && $stores->where('id', $storeId)->first())
-                                {{ $stores->where('id', $storeId)->first()->name }}
-                            @else
-                                <span class="text-gray-500">请先选择仓库</span>
-                            @endif
-                        </div>
-                        <input type="hidden" name="store_id" value="{{ $storeId }}">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">选择仓库</label>
+                        <select name="store_id" x-model="formData.store_id" @change="onStoreChange()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent @error('store_id') border-red-300 @enderror">
+                            <option value="">请选择仓库</option>
+                            @foreach($stores as $store)
+                                <option value="{{ $store->id }}" {{ $storeId == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('store_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <!-- 客户信息 -->
@@ -159,39 +160,62 @@
                 <!-- 退货商品明细 -->
                 <div class="mb-6">
                     <h4 class="text-md font-semibold text-gray-900 mb-4">退货商品明细</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach($products as $product)
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <div>
-                                    <h5 class="font-medium text-gray-900">{{ $product->name }}</h5>
-                                    <p class="text-sm text-gray-500">售价: ¥{{ number_format($product->price, 2) }} | 成本: ¥{{ number_format($product->cost_price, 2) }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-xs text-gray-500">可退库存</span>
-                                    <p class="text-sm font-medium text-green-600">{{ $product->getStockQuantity() ?? 0 }}件</p>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">退货数量</label>
-                                <div class="relative">
-                                    <input type="number" 
-                                           name="products[{{ $loop->index }}][quantity]" 
-                                           x-model="formData.products['{{ $product->id }}']?.quantity"
-                                           @input="updateQuantity('{{ $product->id }}', $event.target.value)"
-                                           class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" 
-                                           placeholder="0" 
-                                           min="0">
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">件</span>
+                    
+                    <!-- 仓库未选择时的提示 -->
+                    <div x-show="!formData.store_id" class="text-center py-8">
+                        <i class="bi bi-box text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-500">请先选择仓库以查看可退货的商品</p>
+                    </div>
+                    
+                    <!-- 加载中状态 -->
+                    <div x-show="loading" class="text-center py-8">
+                        <i class="bi bi-arrow-clockwise animate-spin text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-500">正在加载商品...</p>
+                    </div>
+                    
+                    <!-- 商品列表 -->
+                    <div x-show="formData.store_id && !loading" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <template x-for="(product, index) in products" :key="product.id">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900" x-text="product.name"></h5>
+                                        <p class="text-sm text-gray-500">
+                                            售价: ¥<span x-text="formatPrice(product.price)"></span> | 
+                                            成本: ¥<span x-text="formatPrice(product.cost_price)"></span>
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs text-gray-500">可退库存</span>
+                                        <p class="text-sm font-medium text-green-600" x-text="product.stock_quantity + '件'"></p>
                                     </div>
                                 </div>
-                                <input type="hidden" name="products[{{ $loop->index }}][id]" value="{{ $product->id }}">
-                                <input type="hidden" name="products[{{ $loop->index }}][unit_price]" value="{{ $product->price }}">
-                                <input type="hidden" name="products[{{ $loop->index }}][cost_price]" value="{{ $product->cost_price }}">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">退货数量</label>
+                                    <div class="relative">
+                                        <input type="number" 
+                                               :name="'products[' + index + '][quantity]'"
+                                               x-model="formData.products[product.id].quantity"
+                                               @input="updateQuantity(product.id, $event.target.value)"
+                                               class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" 
+                                               placeholder="0" 
+                                               min="0">
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 sm:text-sm">件</span>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" :name="'products[' + index + '][id]'" :value="product.id">
+                                    <input type="hidden" :name="'products[' + index + '][unit_price]'" :value="product.price">
+                                    <input type="hidden" :name="'products[' + index + '][cost_price]'" :value="product.cost_price">
+                                </div>
                             </div>
+                        </template>
+                        
+                        <!-- 无商品时的提示 -->
+                        <div x-show="products.length === 0" class="col-span-2 text-center py-8">
+                            <i class="bi bi-box-seam text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500">该仓库暂无可退货的商品</p>
                         </div>
-                        @endforeach
                     </div>
                 </div>
 
@@ -343,6 +367,8 @@ document.addEventListener('alpine:init', () => {
             remark: '',
             products: {}
         },
+        products: [],
+        loading: false,
         currentStep: 1,
         get totalQuantity() {
             return Object.values(this.formData.products).reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
@@ -369,15 +395,49 @@ document.addEventListener('alpine:init', () => {
             }
             this.formData.products[id].quantity = quantity;
         },
+        formatPrice(price) {
+            return parseFloat(price).toFixed(2);
+        },
+        async onStoreChange() {
+            if (!this.formData.store_id) {
+                this.products = [];
+                this.formData.products = {};
+                return;
+            }
+            
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/stores/${this.formData.store_id}/products`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // 只获取标品，退货只处理标品
+                    this.products = data.standard_products || [];
+                    
+                    // 初始化商品数据
+                    this.formData.products = {};
+                    this.products.forEach(product => {
+                        this.formData.products[product.id] = {
+                            quantity: 0,
+                            price: product.price,
+                            cost_price: product.cost_price
+                        };
+                    });
+                } else {
+                    console.error('Failed to load products');
+                    this.products = [];
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                this.products = [];
+            } finally {
+                this.loading = false;
+            }
+        },
         init() {
-            // 初始化所有商品的价格和成本
-            @foreach($products as $product)
-                this.formData.products['{{ $product->id }}'] = {
-                    quantity: 0,
-                    price: {{ $product->price }},
-                    cost_price: {{ $product->cost_price }}
-                };
-            @endforeach
+            // 如果有初始仓库，加载商品
+            if (this.formData.store_id) {
+                this.onStoreChange();
+            }
         }
     }));
 });
