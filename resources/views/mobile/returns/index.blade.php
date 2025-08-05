@@ -85,9 +85,8 @@
                         <input type="hidden" name="products[{{ $loop->index }}][cost_price]" value="{{ $product->cost_price }}">
                         <input type="number" 
                             name="products[{{ $loop->index }}][quantity]"
-                            x-model="formData.products['{{ $product->id }}']?.quantity"
-                            @input="updateQuantity('{{ $product->id }}', $event.target.value)"
-                            class="form-input w-full px-3 py-2 rounded-lg border text-center text-lg font-semibold" 
+                            class="form-input w-full px-3 py-2 rounded-lg border text-center text-lg font-semibold product-quantity" 
+                            data-product-id="{{ $product->id }}"
                             placeholder="0" min="0" step="1">
                         <p class="text-xs text-gray-500 mt-1 text-center"><x-lang key="mobile.returns.return_quantity"/></p>
                     </div>
@@ -209,6 +208,15 @@ document.addEventListener('alpine:init', () => {
                     cost_price: {{ $product->cost_price }}
                 };
             @endforeach
+            
+            // 为静态生成的输入框添加事件监听
+            document.querySelectorAll('.product-quantity').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const productId = e.target.dataset.productId;
+                    const quantity = e.target.value;
+                    this.updateQuantity(productId, quantity);
+                });
+            });
             
             // 如果有默认仓库，自动加载商品
             const defaultStoreId = '{{ $storeId }}';
