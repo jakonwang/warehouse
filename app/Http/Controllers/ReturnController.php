@@ -278,43 +278,12 @@ class ReturnController extends Controller
     }
 
     /**
-     * 移动端显示退货创建界面
+     * 移动端显示退货创建界面 - 重定向到主界面
      */
     public function mobileCreate()
     {
-        $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
-        $storeId = request('store_id') ?? session('current_store_id');
-        
-        // 如果没有选择仓库，使用第一个可访问的仓库
-        if (!$storeId && $stores->count() > 0) {
-            $storeId = $stores->first()->id;
-        }
-        
-        // 获取当前仓库分配的商品
-        $products = collect();
-        if ($storeId) {
-            $currentStore = $stores->where('id', $storeId)->first();
-            if ($currentStore) {
-                $products = $currentStore->availableStandardProducts()->get();
-            }
-        }
-        
-        // 如果是调试路由，返回调试页面
-        if (request()->is('mobile/returns/debug')) {
-            return view('mobile.returns.debug', compact('stores', 'products', 'storeId'));
-        }
-        
-        // 如果是测试路由，返回测试页面
-        if (request()->is('mobile/returns/test')) {
-            return view('mobile.returns.test', compact('stores', 'products', 'storeId'));
-        }
-        
-        // 如果是简化版路由，返回简化版页面
-        if (request()->is('mobile/returns/simple')) {
-            return view('mobile.returns.simple', compact('stores', 'products', 'storeId'));
-        }
-        
-        return view('mobile.returns.create', compact('stores', 'products', 'storeId'));
+        // 直接重定向到移动端退货主界面
+        return redirect()->route('mobile.returns.index');
     }
 
     /**

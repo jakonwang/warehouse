@@ -45,13 +45,13 @@ Route::get('/debug-test', function () {
 })->name('debug.test');
 
 // 退货界面调试路由
-Route::get('/mobile/returns/debug', [ReturnController::class, 'mobileCreate'])->name('mobile.returns.debug');
+Route::get('/mobile/returns/debug', [ReturnController::class, 'mobileIndex'])->name('mobile.returns.debug');
 
 // 退货界面测试路由
-Route::get('/mobile/returns/test', [ReturnController::class, 'mobileCreate'])->name('mobile.returns.test');
+Route::get('/mobile/returns/test', [ReturnController::class, 'mobileIndex'])->name('mobile.returns.test');
 
 // 退货界面简化版路由
-Route::get('/mobile/returns/simple', [ReturnController::class, 'mobileCreate'])->name('mobile.returns.simple');
+Route::get('/mobile/returns/simple', [ReturnController::class, 'mobileIndex'])->name('mobile.returns.simple');
 
 // 测试路由 - 检查分类数据
 Route::get('/test-categories', function () {
