@@ -6,6 +6,7 @@ use App\Models\ReturnRecord;
 use App\Models\ReturnDetail;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -284,6 +285,11 @@ class ReturnController extends Controller
         $stores = auth()->user()->getAccessibleStores()->where('is_active', true)->values();
         $storeId = request('store_id') ?? session('current_store_id');
         
+        // 如果没有选择仓库，使用第一个可访问的仓库
+        if (!$storeId && $stores->count() > 0) {
+            $storeId = $stores->first()->id;
+        }
+        
         // 获取当前仓库分配的商品
         $products = collect();
         if ($storeId) {
@@ -291,6 +297,21 @@ class ReturnController extends Controller
             if ($currentStore) {
                 $products = $currentStore->availableStandardProducts()->get();
             }
+        }
+        
+        // 如果是调试路由，返回调试页面
+        if (request()->is('mobile/returns/debug')) {
+            return view('mobile.returns.debug', compact('stores', 'products', 'storeId'));
+        }
+        
+        // 如果是测试路由，返回测试页面
+        if (request()->is('mobile/returns/test')) {
+            return view('mobile.returns.test', compact('stores', 'products', 'storeId'));
+        }
+        
+        // 如果是简化版路由，返回简化版页面
+        if (request()->is('mobile/returns/simple')) {
+            return view('mobile.returns.simple', compact('stores', 'products', 'storeId'));
         }
         
         return view('mobile.returns.create', compact('stores', 'products', 'storeId'));
@@ -330,6 +351,37 @@ class ReturnController extends Controller
             ->get();
 
         return view('mobile.returns.index', compact('stores', 'products', 'recentRecords', 'storeId'));
+    }
+
+    /**
+     * 获取指定仓库的商品列表（AJAX）
+     */
+    public function getStoreProducts(Request $request)
+    {
+        $request->validate([
+            'store_id' => 'required|exists:stores,id'
+        ]);
+
+        $storeId = $request->store_id;
+        $user = auth()->user();
+
+        // 检查用户是否有权限访问该仓库
+        if (!$user->canAccessStore($storeId)) {
+            return response()->json(['error' => '无权限访问该仓库'], 403);
+        }
+
+        // 获取该仓库的商品
+        $store = Store::find($storeId);
+        if (!$store) {
+            return response()->json(['error' => '仓库不存在'], 404);
+        }
+
+        $products = $store->availableStandardProducts()->get();
+
+        return response()->json([
+            'success' => true,
+            'products' => $products
+        ]);
     }
 
     /**

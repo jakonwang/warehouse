@@ -79,7 +79,8 @@ class Store extends Model
             ->where('store_products.is_active', true)
             ->where('products.is_active', true)
             ->orderBy('store_products.sort_order')
-            ->orderBy('products.sort_order');
+            ->orderBy('products.sort_order')
+            ->select(['products.id', 'products.name', 'products.code', 'products.type', 'products.price', 'products.cost_price', 'products.is_active', 'products.sort_order']);
     }
 
     /**

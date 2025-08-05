@@ -8,22 +8,6 @@
         <p class="text-gray-600"><x-lang key="mobile.returns.subtitle"/></p>
     </div>
 
-    @if (session('success'))
-        <div class="card p-4 border-l-4 border-green-500 bg-green-50">
-            <p class="text-green-700">{{ session('success') }}</p>
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="card p-4 border-l-4 border-red-500 bg-red-50">
-            <ul class="text-red-700 space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <!-- 退货表单 -->
     <form action="{{ route('mobile.returns.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
@@ -35,7 +19,7 @@
                 <!-- 仓库选择 -->
                 <div>
                     <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.returns.select_store"/></label>
-                    <select name="store_id" id="store-select" class="form-input w-full px-3 py-2 rounded-lg border" required>
+                    <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border" required>
                         <option value=""><x-lang key="mobile.returns.please_select_store"/></option>
                         @foreach($stores as $store)
                             <option value="{{ $store->id }}" @if($storeId == $store->id) selected @endif>{{ $store->name }}</option>
@@ -53,33 +37,8 @@
                 <!-- 退货照片 -->
                 <div>
                     <label class="form-label block text-sm font-medium mb-2">📷 <x-lang key="mobile.returns.return_photo"/></label>
-                    
-                    <!-- 隐藏的文件输入框 -->
-                    <input type="file" name="image" accept="image/*" class="hidden" id="returnImageInput">
-                    
-                    <!-- 上传选项按钮 -->
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <button type="button" onclick="selectFromGalleryReturn()" class="flex flex-col items-center justify-center py-4 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 transition-all duration-200 transform hover:scale-105">
-                            <i class="bi bi-image text-2xl mb-1"></i>
-                            <span class="text-sm font-medium">选择相册</span>
-                        </button>
-                        <button type="button" onclick="takePhotoReturn()" class="flex flex-col items-center justify-center py-4 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 transition-all duration-200 transform hover:scale-105">
-                            <i class="bi bi-camera text-2xl mb-1"></i>
-                            <span class="text-sm font-medium">拍照</span>
-                        </button>
-                    </div>
-                    
-                    <!-- 图片预览 -->
-                    <div id="return-image-preview" class="mt-2 hidden">
-                        <div class="relative inline-block">
-                            <img src="" alt="预览图" class="max-w-full h-48 rounded-lg border border-gray-200 object-cover shadow-md">
-                            <button type="button" onclick="removeReturnImage()" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors duration-200 shadow-lg">
-                                ×
-                            </button>
-                        </div>
-                        <div class="mt-2 text-xs text-gray-600 bg-gray-50 rounded p-2" id="return-image-info"></div>
-                    </div>
-                    
+                    <input type="file" name="image" accept="image/*" 
+                        class="form-input w-full px-3 py-2 rounded-lg border">
                     <p class="text-xs text-gray-500 mt-1">💡 <x-lang key="mobile.returns.photo_desc"/></p>
                 </div>
 
@@ -97,15 +56,11 @@
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 <x-lang key="mobile.returns.return_products"/></h2>
             
-
-            
-
-            
             <!-- 商品列表 -->
             @if($storeId && $products->count() > 0)
                 <div class="space-y-4">
                     @foreach($products as $product)
-                        <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 product-item" data-store-id="{{ $storeId }}">
+                        <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm font-medium text-gray-700">{{ $product->name }}</span>
                                 <span class="badge-warning text-xs px-2 py-1 rounded-full">
@@ -168,75 +123,30 @@
 </div>
 
 <script>
-function selectFromGalleryReturn() {
-    const input = document.getElementById('returnImageInput');
-    input.removeAttribute('capture');
-    input.click();
-}
-
-function takePhotoReturn() {
-    const input = document.getElementById('returnImageInput');
-    input.setAttribute('capture', 'environment');
-    input.click();
-}
-
-function removeReturnImage() {
-    const input = document.getElementById('returnImageInput');
-    const preview = document.getElementById('return-image-preview');
-    const info = document.getElementById('return-image-info');
-    
-    input.value = '';
-    preview.classList.add('hidden');
-    info.innerHTML = '';
-}
-
-document.getElementById('returnImageInput').addEventListener('change', function(e) {
-    if (this.files && this.files[0]) {
-        const file = this.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const preview = document.getElementById('return-image-preview');
-            const info = document.getElementById('return-image-info');
-            
-            preview.querySelector('img').src = e.target.result;
-            preview.classList.remove('hidden');
-            
-            // 显示文件信息
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            info.innerHTML = `文件名: ${file.name}<br>大小: ${fileSize} MB<br>类型: ${file.type}`;
-        }
-        
-        reader.readAsDataURL(file);
-    }
-});
-
-// 更新总计
-function updateTotals() {
-    const quantityInputs = document.querySelectorAll('input[name*="[quantity]"]');
-    let totalQuantity = 0;
-    let totalAmount = 0;
-    let totalCost = 0;
-
-    quantityInputs.forEach(input => {
-        const quantity = parseInt(input.value) || 0;
-        const price = parseFloat(input.dataset.productPrice) || 0;
-        const cost = price * 0.6; // 假设成本为售价的60%
-
-        totalQuantity += quantity;
-        totalAmount += quantity * price;
-        totalCost += quantity * cost;
-    });
-
-    document.getElementById('totalQuantity').textContent = totalQuantity + ' 件';
-    document.getElementById('totalAmount').textContent = '¥' + totalAmount.toFixed(2);
-    document.getElementById('totalCost').textContent = '¥' + totalCost.toFixed(2);
-}
-
+// 简单的总计更新功能
 document.addEventListener('DOMContentLoaded', function() {
     const quantityInputs = document.querySelectorAll('input[name*="[quantity]"]');
     
-    // 绑定数量输入事件
+    function updateTotals() {
+        let totalQuantity = 0;
+        let totalAmount = 0;
+        let totalCost = 0;
+
+        quantityInputs.forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            const price = parseFloat(input.dataset.productPrice) || 0;
+            const cost = price * 0.6; // 假设成本为售价的60%
+
+            totalQuantity += quantity;
+            totalAmount += quantity * price;
+            totalCost += quantity * cost;
+        });
+
+        document.getElementById('totalQuantity').textContent = totalQuantity + ' 件';
+        document.getElementById('totalAmount').textContent = '¥' + totalAmount.toFixed(2);
+        document.getElementById('totalCost').textContent = '¥' + totalCost.toFixed(2);
+    }
+
     quantityInputs.forEach(input => {
         input.addEventListener('input', updateTotals);
     });

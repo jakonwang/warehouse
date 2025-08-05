@@ -18,13 +18,13 @@
         <div class="card p-4 border-l-4 border-red-500 bg-red-50">
             <ul class="text-red-700 space-y-1">
                 @foreach ($errors->all() as $error)
-                    <li>�?{{ $error }}</li>
+                    <li>�?{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
     @endif
 
-    <!-- 退货表�?-->
+    <!-- 退货表�?-->
     <form action="{{ route('mobile.returns.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
@@ -35,7 +35,8 @@
                 <!-- 仓库选择 -->
                 <div>
                     <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.returns.select_store"/></label>
-                    <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border" required>
+                    <select name="store_id" class="form-input w-full px-3 py-2 rounded-lg border" required 
+                            @change="loadStoreProducts($event.target.value)">
                         <option value=""><x-lang key="mobile.returns.please_select_store"/></option>
                         @foreach($stores as $store)
                             <option value="{{ $store->id }}" {{ $storeId == $store->id ? 'selected' : '' }}>
@@ -52,7 +53,7 @@
                         class="form-input w-full px-3 py-2 rounded-lg border" placeholder="<x-lang key="mobile.returns.customer_placeholder"/>">
                 </div>
 
-                <!-- 退货照�?-->
+                <!-- 退货照�?-->
                 <div>
                     <label class="form-label block text-sm font-medium mb-2"><x-lang key="mobile.returns.return_photo"/></label>
                     <input type="file" name="image" accept="image/*" 
@@ -72,9 +73,9 @@
         <!-- 商品选择 -->
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">💰 <x-lang key="mobile.returns.return_products"/></h2>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4" id="products-container">
                 @foreach($products as $product)
-                    <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
+                    <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 product-item" data-product-id="{{ $product->id }}">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-sm font-medium text-gray-700">{{ $product->name }}</span>
                             <span class="badge-warning text-xs px-2 py-1 rounded-full"><x-lang key="mobile.returns.price"/>: ¥{{ number_format($product->price, 2) }}</span>
@@ -92,7 +93,12 @@
                     </div>
                 @endforeach
             </div>
-            <!-- 退货统�?-->
+            <!-- 无商品提示 -->
+            <div id="no-products-message" class="text-center py-8 text-gray-500" style="display: none;">
+                <i class="bi bi-box text-4xl mb-2"></i>
+                <p>该仓库暂无商品</p>
+            </div>
+            <!-- 退货统?-->
             <div class="bg-red-50 rounded-lg p-4 mt-4">
                 <h4 class="text-md font-semibold text-red-900 mb-3"><x-lang key="mobile.returns.return_stats"/></h4>
                 <div class="grid grid-cols-3 gap-4">
@@ -121,7 +127,7 @@
         </div>
     </form>
 
-    <!-- 最近退货记�?-->
+    <!-- 最近退货记�?-->
     @if(isset($recentRecords) && $recentRecords->count() > 0)
         <div class="card p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 <x-lang key="mobile.returns.recent_records"/></h2>
@@ -195,7 +201,7 @@ document.addEventListener('alpine:init', () => {
             this.formData.products[id].quantity = quantity;
         },
         init() {
-            // 初始化所有商品的价格和成�?
+            // 初始化所有商品的价格和成本
             @foreach($products as $product)
                 this.formData.products['{{ $product->id }}'] = {
                     quantity: 0,
@@ -203,6 +209,92 @@ document.addEventListener('alpine:init', () => {
                     cost_price: {{ $product->cost_price }}
                 };
             @endforeach
+            
+            // 如果有默认仓库，自动加载商品
+            const defaultStoreId = '{{ $storeId }}';
+            if (defaultStoreId && defaultStoreId !== '') {
+                this.loadStoreProducts(defaultStoreId);
+            }
+        },
+        loadStoreProducts(storeId) {
+            const productsContainer = document.getElementById('products-container');
+            const noProductsMessage = document.getElementById('no-products-message');
+
+            if (storeId) {
+                // 清空现有商品
+                this.formData.products = {};
+                productsContainer.innerHTML = '';
+                noProductsMessage.style.display = 'none';
+
+                // 显示加载状态
+                productsContainer.innerHTML = '<div class="col-span-2 text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div><p class="mt-2 text-gray-500">加载商品中...</p></div>';
+
+                // AJAX调用获取商品
+                fetch(`{{ route('mobile.returns.store-products') }}?store_id=${storeId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success && data.products && data.products.length > 0) {
+                            // 清空加载状态
+                            productsContainer.innerHTML = '';
+                            
+                            // 渲染商品
+                            data.products.forEach((product, index) => {
+                                const productHtml = `
+                                    <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 product-item" data-product-id="${product.id}">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm font-medium text-gray-700">${product.name}</span>
+                                            <span class="badge-warning text-xs px-2 py-1 rounded-full">价格: ¥${parseFloat(product.price).toFixed(2)}</span>
+                                        </div>
+                                        <input type="hidden" name="products[${index}][id]" value="${product.id}">
+                                        <input type="hidden" name="products[${index}][unit_price]" value="${product.price}">
+                                        <input type="hidden" name="products[${index}][cost_price]" value="${product.cost_price}">
+                                        <input type="number" 
+                                            name="products[${index}][quantity]"
+                                            class="form-input w-full px-3 py-2 rounded-lg border text-center text-lg font-semibold product-quantity" 
+                                            data-product-id="${product.id}"
+                                            placeholder="0" min="0" step="1">
+                                        <p class="text-xs text-gray-500 mt-1 text-center">退货数量</p>
+                                    </div>
+                                `;
+                                productsContainer.innerHTML += productHtml;
+                                
+                                // 初始化商品数据
+                                this.formData.products[product.id] = {
+                                    quantity: 0,
+                                    price: parseFloat(product.price),
+                                    cost_price: parseFloat(product.cost_price)
+                                };
+                            });
+                            
+                            // 为动态生成的输入框添加事件监听
+                            productsContainer.querySelectorAll('.product-quantity').forEach(input => {
+                                input.addEventListener('input', (e) => {
+                                    const productId = e.target.dataset.productId;
+                                    const quantity = e.target.value;
+                                    this.updateQuantity(productId, quantity);
+                                });
+                            });
+                        } else {
+                            // 显示无商品提示
+                            productsContainer.innerHTML = '';
+                            noProductsMessage.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('加载商品失败:', error);
+                        productsContainer.innerHTML = '<div class="col-span-2 text-center py-8 text-red-500"><p>加载商品失败，请重试</p></div>';
+                    });
+            } else {
+                // 清空商品
+                this.formData.products = {};
+                productsContainer.innerHTML = '';
+                noProductsMessage.style.display = 'block';
+            }
         }
     }));
 });

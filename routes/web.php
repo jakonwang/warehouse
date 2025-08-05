@@ -44,6 +44,15 @@ Route::get('/debug-test', function () {
     return view('debug-test', compact('users', 'products'));
 })->name('debug.test');
 
+// 退货界面调试路由
+Route::get('/mobile/returns/debug', [ReturnController::class, 'mobileCreate'])->name('mobile.returns.debug');
+
+// 退货界面测试路由
+Route::get('/mobile/returns/test', [ReturnController::class, 'mobileCreate'])->name('mobile.returns.test');
+
+// 退货界面简化版路由
+Route::get('/mobile/returns/simple', [ReturnController::class, 'mobileCreate'])->name('mobile.returns.simple');
+
 // 测试路由 - 检查分类数据
 Route::get('/test-categories', function () {
     $categories = \DB::table('categories')
@@ -286,6 +295,7 @@ Route::middleware(['auth'])->prefix('mobile')->name('mobile.')->group(function (
     Route::get('/returns', [ReturnController::class, 'mobileIndex'])->name('returns.index');
     Route::get('/returns/create', [ReturnController::class, 'mobileCreate'])->name('returns.create');
     Route::post('/returns', [ReturnController::class, 'mobileStore'])->name('returns.store');
+    Route::get('/returns/store-products', [ReturnController::class, 'getStoreProducts'])->name('returns.store-products');
     Route::get('/returns/{id}/edit', [ReturnController::class, 'mobileEdit'])->name('returns.edit');
     Route::put('/returns/{id}', [ReturnController::class, 'mobileUpdate'])->name('returns.update');
     Route::delete('/returns/{id}', [ReturnController::class, 'mobileDestroy'])->name('returns.destroy');

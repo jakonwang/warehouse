@@ -97,6 +97,68 @@ return_records (id, store_id, user_id, customer_name, customer_phone, return_rea
 
 ## 问题修复记录
 
+### 2025-08-02: 移动端退货界面商品显示问题修复
+
+#### 问题描述
+移动端退货界面 (`/mobile/returns`) 打开界面和切换仓库时都不显示商品，导致用户无法进行退货操作。API调用返回500错误，前端JavaScript出现语法错误。
+
+#### 问题原因
+1. 移动端退货控制器 `mobileIndex()` 方法中，当没有选择仓库时，`$products` 是一个空集合
+2. 缺少动态加载商品的功能，用户切换仓库时商品列表不会更新
+3. Store模型中的 `availableProducts()` 方法存在SQL字段冲突问题
+4. 前端JavaScript代码没有实现仓库切换时的商品动态加载
+5. **路由顺序问题**：`/returns/store-products` 路由在 `/returns/{id}/edit` 路由之后，导致 `store-products` 被当作 `{id}` 参数处理
+6. **缺少模型导入**：ReturnController中缺少Store模型的导入
+7. **JavaScript语法错误**：使用了可选链操作符 `?.` 和Alpine.js指令在动态HTML中的兼容性问题
+
+#### 解决方案
+1. **修复Store模型** (`app/Models/Store.php`)
+   - 在 `availableProducts()` 方法中添加 `select()` 子句，明确指定字段来源
+   - 避免SQL查询中的字段名冲突问题
+
+2. **添加API接口** (`app/Http/Controllers/ReturnController.php`)
+   - 新增 `getStoreProducts()` 方法，支持动态获取指定仓库的商品
+   - 添加权限验证，确保用户只能访问有权限的仓库商品
+   - 返回JSON格式的商品数据
+   - **添加Store模型导入**：`use App\Models\Store;`
+
+3. **修复路由配置** (`routes/web.php`)
+   - 新增 `/mobile/returns/store-products` 路由
+   - **调整路由顺序**：将 `store-products` 路由放在参数路由 `{id}` 之前
+   - 支持GET请求获取指定仓库的商品列表
+
+4. **改进前端交互** (`resources/views/mobile/returns/index.blade.php`)
+   - 为仓库选择器添加 `@change` 事件监听
+   - 实现 `loadStoreProducts()` 方法，通过AJAX动态加载商品
+   - 添加加载状态显示和无商品提示
+   - 优化用户体验，支持实时商品切换
+   - **修复JavaScript语法错误**：
+     - 移除可选链操作符 `?.`，使用传统的方式访问对象属性
+     - 修复Alpine.js指令在动态HTML中的兼容性问题
+     - 使用原生JavaScript事件监听器替代Alpine.js指令
+     - 改进错误处理和响应验证
+
+#### 修复结果
+- ✅ 移动端退货界面现在可以正确显示商品
+- ✅ 支持动态切换仓库时更新商品列表
+- ✅ 添加了权限控制，确保数据安全
+- ✅ 改进了用户体验，商品选择更加精准
+- ✅ 修复了SQL字段冲突问题
+- ✅ 添加了加载状态和无商品提示
+- ✅ **修复了路由顺序问题，API调用正常**
+- ✅ **修复了模型导入问题，避免Class not found错误**
+- ✅ **修复了JavaScript语法错误，提高浏览器兼容性**
+- ✅ **改进了错误处理，提供更好的用户体验**
+
+#### 相关文件
+- `app/Models/Store.php` - 修复的模型
+- `app/Http/Controllers/ReturnController.php` - 新增的API方法和模型导入
+- `routes/web.php` - 修复的路由配置和顺序
+- `resources/views/mobile/returns/index.blade.php` - 改进的视图和JavaScript代码
+- `scripts/test_returns_api.php` - 测试脚本
+- `scripts/test_returns_api_simple.php` - 简单API测试脚本
+- `scripts/test_frontend_js.php` - 前端JavaScript语法测试脚本
+
 ### 2025-08-02: 分类表 slug 字段重复值问题修复
 
 #### 问题描述
@@ -288,41 +350,6 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 - `app/Http/Controllers/StockInController.php` - 修复的控制器
 - `routes/web.php` - 新增的API路由
 - `resources/views/mobile/stock-in/index.blade.php` - 改进的视图
-系统在创建或更新分类时出现数据库完整性约束错误：
-```
-SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'categories_slug_unique'
-```
-
-#### 问题原因
-1. 分类表中的 `slug` 字段存在空值，违反了唯一性约束
-2. Category 模型的 `boot()` 方法中，当分类名称为空或特殊字符时，`Str::slug()` 可能返回空字符串
-3. 没有对生成的 slug 进行唯一性检查和空值处理
-
-#### 解决方案
-1. **创建修复脚本** (`scripts/fix_categories_slug.php`)
-   - 查找所有空的 slug 值
-   - 为每个空 slug 生成唯一的 slug
-   - 处理重复 slug 的情况
-
-2. **改进 Category 模型** (`app/Models/Category.php`)
-   - 添加 `generateUniqueSlug()` 方法
-   - 确保生成的 slug 不为空
-   - 处理 slug 重复的情况
-   - 在创建和更新时自动生成唯一 slug
-
-3. **数据库迁移** (`2025_08_02_121714_ensure_categories_slug_not_null.php`)
-   - 修复现有的空 slug 值
-   - 修改字段约束，确保 slug 字段不允许空值
-
-#### 修复结果
-- ✅ 成功修复了 1 个空的 slug 值
-- ✅ 改进了 slug 生成逻辑，防止未来出现类似问题
-- ✅ 添加了数据库约束，确保数据完整性
-
-#### 相关文件
-- `scripts/fix_categories_slug.php` - 修复脚本
-- `app/Models/Category.php` - 改进的模型
-- `database/migrations/2025_08_02_121714_ensure_categories_slug_not_null.php` - 数据库迁移
 
 ## 功能模块
 
