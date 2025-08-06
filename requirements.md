@@ -71,6 +71,41 @@
 
 ## 0. 问题修复记录
 
+### 0.2 调拨完成功能库存记录类型错误修复 (2025-08-06)
+
+#### 问题描述
+在调拨详情页面点击"完成调拨"按钮后，仓库库存没有发生变化，系统报错：
+```
+SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 1
+```
+
+#### 问题原因
+1. `inventory_records` 表中的 `type` 字段是一个 `enum` 类型，只允许 `['in', 'out', 'adjust', 'check']` 这些值
+2. 调拨控制器中使用了 `transfer_out` 和 `transfer_in` 这样的值，导致数据库插入失败
+3. 数据库字段类型与代码中使用的值不匹配
+
+#### 解决方案
+1. **修改调拨控制器** (`app/Http/Controllers/StoreTransferController.php`)
+   - 将 `transfer_out` 改为 `out`
+   - 将 `transfer_in` 改为 `in`
+   - 使用正确的枚举值
+
+2. **创建测试脚本** (`scripts/test_store_transfer_complete.php`)
+   - 验证调拨完成功能
+   - 检查库存变化
+   - 验证库存记录创建
+
+3. **创建测试数据脚本** (`scripts/create_test_transfer.php`)
+   - 自动创建测试用的调拨记录
+   - 用于功能验证
+
+#### 验证结果
+- ✅ 调拨完成功能正常工作
+- ✅ 源仓库库存正确减少
+- ✅ 目标仓库库存正确增加
+- ✅ 库存记录正确创建
+- ✅ 调拨状态正确更新
+
 ### 0.1 分类表 slug 字段重复值问题修复 (2025-08-02)
 
 #### 问题描述
