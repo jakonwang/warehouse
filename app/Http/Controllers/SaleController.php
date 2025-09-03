@@ -220,7 +220,7 @@ class SaleController extends Controller
                     $detail->save();
 
                     $totalAmount += $detail->total;
-                    $totalCost += $detail->cost_price;
+                    $totalCost += $detail->cost_price * $detail->quantity;
                     // 扣减库存
                     $product->reduceStock($item['quantity'], $request->store_id);
                 }
@@ -797,7 +797,7 @@ class SaleController extends Controller
                     $detail->save();
 
                     $totalAmount += $detail->total;
-                    $totalCost += $detail->cost_price;
+                    $totalCost += $detail->cost_price * $detail->quantity;
                     // 扣减库存
                     $product->reduceStock($item['quantity'], $request->store_id);
                 }

@@ -58,12 +58,15 @@
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">选择商品 *</label>
-                                <select name="products[0][id]" class="product-select w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" required>
+                                <select name="products[0][id]" class="product-select w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" required onchange="updateProductPrice(this, 0)">
                                     <option value="">请先选择仓库</option>
                                     @if($products->count() > 0)
                                         @foreach($products as $product)
-                                            <option value="{{ $product->id }}" {{ old('products.0.id') == $product->id ? 'selected' : '' }}>
-                                                {{ $product->name }} ({{ $product->code }})
+                                            <option value="{{ $product->id }}" 
+                                                    data-price="{{ $product->price }}" 
+                                                    data-cost="{{ $product->cost_price ?? 0 }}"
+                                                    {{ old('products.0.id') == $product->id ? 'selected' : '' }}>
+                                                {{ $product->name }} ({{ $product->code }}) - ¥{{ $product->price }}
                                             </option>
                                         @endforeach
                                     @endif
@@ -72,16 +75,16 @@
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">出库数量 *</label>
-                                    <input type="number" name="price_series[0][quantity]" value="{{ old('price_series.0.quantity', 0) }}" min="0" required
+                                    <input type="number" name="products[0][quantity]" value="{{ old('products.0.quantity', 0) }}" min="0" required
                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                                            placeholder="请输入数量">
                                 </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">单价 *</label>
-                                    <input type="number" name="price_series[0][unit_price]" value="{{ old('price_series.0.unit_price', 0) }}" min="0" step="0.01" required
+                                    <input type="number" name="products[0][unit_price]" value="{{ old('products.0.unit_price', 0) }}" min="0" step="0.01" required
                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                                           placeholder="请输入单价">
+                                           placeholder="请输入单价" readonly>
                                 </div>
                                 
                                 <div class="flex items-end">
@@ -199,13 +202,33 @@ function updateProductOptions() {
         currentProducts.forEach(product => {
             const option = document.createElement('option');
             option.value = product.id;
-            option.textContent = product.display_name;
+            option.textContent = `${product.name} (${product.code}) - ¥${product.price}`;
+            option.setAttribute('data-price', product.price);
+            option.setAttribute('data-cost', product.cost_price || 0);
             if (product.id == currentValue) {
                 option.selected = true;
             }
             select.appendChild(option);
         });
     });
+}
+
+// 更新商品价格
+function updateProductPrice(select, index) {
+    const selectedOption = select.options[select.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        const price = selectedOption.getAttribute('data-price');
+        const priceInput = select.closest('.product-item').querySelector(`input[name="products[${index}][unit_price]"]`);
+        if (priceInput && price) {
+            priceInput.value = price;
+        }
+    } else {
+        // 清空价格
+        const priceInput = select.closest('.product-item').querySelector(`input[name="products[${index}][unit_price]"]`);
+        if (priceInput) {
+            priceInput.value = '';
+        }
+    }
 }
 
 // 监听仓库选择变化
@@ -231,26 +254,26 @@ function addProduct() {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">选择商品 *</label>
-                <select name="products[${productIndex}][id]" class="product-select w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" required>
+                <select name="products[${productIndex}][id]" class="product-select w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" required onchange="updateProductPrice(this, ${productIndex})">
                     <option value="">请选择商品</option>
                     ${currentProducts.map(product => 
-                        `<option value="${product.id}">${product.display_name}</option>`
+                        `<option value="${product.id}" data-price="${product.price}" data-cost="${product.cost_price || 0}">${product.name} (${product.code}) - ¥${product.price}</option>`
                     ).join('')}
                 </select>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">出库数量 *</label>
-                <input type="number" name="price_series[${productIndex}][quantity]" value="0" min="0" required
+                <input type="number" name="products[${productIndex}][quantity]" value="0" min="0" required
                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                        placeholder="请输入数量">
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">单价 *</label>
-                <input type="number" name="price_series[${productIndex}][unit_price]" value="0" min="0" step="0.01" required
+                <input type="number" name="products[${productIndex}][unit_price]" value="0" min="0" step="0.01" required
                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                       placeholder="请输入单价">
+                       placeholder="请输入单价" readonly>
             </div>
             
             <div class="flex items-end">
