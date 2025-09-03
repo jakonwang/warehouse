@@ -125,6 +125,20 @@ class StockInController extends Controller
                     $inventory->quantity = ($inventory->quantity ?? 0) + $item['quantity'];
                     $inventory->save();
 
+                    // 创建库存变动记录
+                    if (class_exists('App\Models\InventoryRecord')) {
+                        \App\Models\InventoryRecord::create([
+                            'inventory_id' => $inventory->id,
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $costPrice,
+                            'total_amount' => $item['quantity'] * $costPrice,
+                            'type' => 'in',
+                            'reference_type' => 'stock_in',
+                            'reference_id' => $record->id,
+                            'note' => "入库记录 #{$record->id} - {$product->name}",
+                        ]);
+                    }
+
                     $totalAmount += $detail->total_amount;
                     $totalCost += $detail->total_cost;
                 }
@@ -171,8 +185,29 @@ class StockInController extends Controller
                     ->first();
                 
                 if ($inventory) {
+                    // 检查库存是否足够回退
+                    if ($inventory->quantity < $detail->quantity) {
+                        throw new \Exception("商品「{$detail->product->name}」的库存不足，无法回退 {$detail->quantity} 个。当前库存: {$inventory->quantity} 个");
+                    }
+                    
                     $inventory->quantity -= $detail->quantity;
                     $inventory->save();
+
+                    // 创建库存回退记录
+                    if (class_exists('App\Models\InventoryRecord')) {
+                        \App\Models\InventoryRecord::create([
+                            'inventory_id' => $inventory->id,
+                            'quantity' => -$detail->quantity, // 负数表示减少
+                            'unit_price' => $detail->unit_cost ?? 0,
+                            'total_amount' => -($detail->quantity * ($detail->unit_cost ?? 0)),
+                            'type' => 'out',
+                            'reference_type' => 'stock_in_delete',
+                            'reference_id' => $stockInRecord->id,
+                            'note' => "删除入库记录 #{$stockInRecord->id} - {$detail->product->name}",
+                        ]);
+                    }
+                } else {
+                    throw new \Exception("找不到商品「{$detail->product->name}」在仓库「{$stockInRecord->store->name}」的库存记录");
                 }
             }
 
