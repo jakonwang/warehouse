@@ -38,7 +38,7 @@ class InventoryController extends Controller
         if ($isHistoricalView) {
             // 历史库存查询
             $inventory = $this->getHistoricalInventory($request, $filterDate, $currentStoreId, $user);
-            $stats = $this->calculateHistoricalStats($inventory);
+            $stats = $this->calculateHistoricalStatsForDate($request, $filterDate, $currentStoreId, $user);
         } else {
             // 当前库存查询（原有逻辑）
             $baseQuery = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
@@ -266,7 +266,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * 计算历史库存统计数据
+     * 计算历史库存统计数据（基于分页数据）
      */
     private function calculateHistoricalStats($inventory)
     {
@@ -294,6 +294,105 @@ class InventoryController extends Controller
             'low_stock_count' => $lowStockCount,
             'out_of_stock_count' => $outOfStockCount,
         ];
+    }
+
+    /**
+     * 计算指定日期的全部历史库存统计数据
+     */
+    private function calculateHistoricalStatsForDate($request, $filterDate, $currentStoreId, $user)
+    {
+        try {
+            // 获取所有库存记录（不分页）
+            $inventoryQuery = Inventory::with(['product:id,name,code,cost_price'])
+                ->whereHas('product', function($query) {
+                    $query->where('type', 'standard');
+                });
+
+            // 应用仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $inventoryQuery->where('store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $inventoryQuery->whereIn('store_id', $userStoreIds);
+            }
+
+            $allInventories = $inventoryQuery->get();
+            
+            $totalQuantity = 0;
+            $totalValue = 0;
+            $lowStockCount = 0;
+            $outOfStockCount = 0;
+
+            foreach ($allInventories as $inventory) {
+                $historicalQuantity = $this->calculateHistoricalQuantity($inventory->id, $filterDate);
+                
+                // 应用筛选条件（如果有的话）
+                $shouldInclude = true;
+                
+                // 关键词筛选
+                if ($request->filled('keyword')) {
+                    $keyword = $request->keyword;
+                    $shouldInclude = stripos($inventory->product->name, $keyword) !== false || 
+                                   stripos($inventory->product->code, $keyword) !== false;
+                }
+                
+                // 状态筛选
+                if ($shouldInclude && $request->filled('status')) {
+                    switch ($request->status) {
+                        case 'low':
+                            $shouldInclude = $historicalQuantity <= $inventory->min_quantity && $historicalQuantity > 0;
+                            break;
+                        case 'out':
+                            $shouldInclude = $historicalQuantity == 0;
+                            break;
+                        case 'normal':
+                            $shouldInclude = $historicalQuantity > $inventory->min_quantity;
+                            break;
+                        case 'overstock':
+                            $shouldInclude = $historicalQuantity >= $inventory->max_quantity;
+                            break;
+                    }
+                }
+                
+                // 数量范围筛选
+                if ($shouldInclude && $request->filled('min_quantity')) {
+                    $shouldInclude = $historicalQuantity >= $request->min_quantity;
+                }
+                
+                if ($shouldInclude && $request->filled('max_quantity')) {
+                    $shouldInclude = $historicalQuantity <= $request->max_quantity;
+                }
+                
+                // 如果通过筛选，则计入统计
+                if ($shouldInclude) {
+                    $totalQuantity += $historicalQuantity;
+                    $totalValue += $historicalQuantity * ($inventory->product->cost_price ?? 0);
+                    
+                    if ($historicalQuantity <= ($inventory->min_quantity ?? 0) && $historicalQuantity > 0) {
+                        $lowStockCount++;
+                    }
+                    
+                    if ($historicalQuantity == 0) {
+                        $outOfStockCount++;
+                    }
+                }
+            }
+
+            return [
+                'total_quantity' => $totalQuantity,
+                'total_value' => $totalValue,
+                'low_stock_count' => $lowStockCount,
+                'out_of_stock_count' => $outOfStockCount,
+            ];
+        } catch (\Exception $e) {
+            \Log::error('计算历史库存统计数据失败: ' . $e->getMessage());
+            return [
+                'total_quantity' => 0,
+                'total_value' => 0,
+                'low_stock_count' => 0,
+                'out_of_stock_count' => 0,
+            ];
+        }
     }
 
     /**
