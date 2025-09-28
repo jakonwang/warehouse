@@ -1063,9 +1063,9 @@ class InventoryController extends Controller
 
             // 根据格式选择导出方式
             if ($format === 'excel') {
-                return $this->exportToExcel($data);
+                return $this->exportToExcel($data, $isHistoricalView, $filterDate);
             } else {
-                return $this->exportToCSV($data);
+                return $this->exportToCSV($data, $isHistoricalView, $filterDate);
             }
 
         } catch (\Exception $e) {
@@ -1077,7 +1077,7 @@ class InventoryController extends Controller
     /**
      * 导出为Excel格式（包含图片）
      */
-    private function exportToExcel($data)
+    private function exportToExcel($data, $isHistoricalView = false, $filterDate = null)
     {
         // 检查是否安装了PhpSpreadsheet
         if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
@@ -1215,7 +1215,7 @@ class InventoryController extends Controller
         }
 
         // 生成文件名
-        $datePrefix = $isHistoricalView ? $filterDate : now()->format('Y-m-d');
+        $datePrefix = $isHistoricalView && $filterDate ? $filterDate : now()->format('Y-m-d');
         $filename = 'inventory_export_' . $datePrefix . '_' . now()->format('H-i-s') . '.xlsx';
 
         // 创建Excel写入器
@@ -1233,13 +1233,13 @@ class InventoryController extends Controller
     /**
      * 导出为CSV格式
      */
-    private function exportToCSV($data)
+    private function exportToCSV($data, $isHistoricalView = false, $filterDate = null)
     {
         // 生成CSV内容
         $csvContent = $this->generateInventoryCSV($data);
 
         // 生成文件名
-        $datePrefix = $isHistoricalView ? $filterDate : now()->format('Y-m-d');
+        $datePrefix = $isHistoricalView && $filterDate ? $filterDate : now()->format('Y-m-d');
         $filename = 'inventory_export_' . $datePrefix . '_' . now()->format('H-i-s') . '.csv';
 
         // 返回CSV下载
