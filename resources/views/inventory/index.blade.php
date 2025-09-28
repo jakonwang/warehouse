@@ -5,6 +5,26 @@
 
 @section('content')
 <div class="space-y-6">
+    <!-- 日期提示 -->
+    @if($isHistoricalView)
+        <div class="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center mr-4">
+                    <i class="bi bi-calendar-event text-white text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-orange-900">历史库存视图</h3>
+                    <p class="text-orange-700">当前显示的是 <strong>{{ $filterDate }}</strong> 的库存数据</p>
+                </div>
+                <div class="ml-auto">
+                    <a href="{{ route('inventory.index') }}" class="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-all duration-200">
+                        <i class="bi bi-arrow-left mr-1"></i>返回当前库存
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- 顶部数据概览 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
@@ -168,11 +188,17 @@
                             </button>
                             <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                                 <div class="py-1">
-                                    <a href="{{ route('inventory.export') }}?format=csv" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{{ route('inventory.export') }}?format=csv&{{ http_build_query(request()->all()) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="bi bi-file-earmark-text mr-2"></i>导出CSV
+                                        @if($isHistoricalView)
+                                            <span class="text-xs text-orange-600">({{ $filterDate }})</span>
+                                        @endif
                                     </a>
-                                    <a href="{{ route('inventory.export') }}?format=excel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{{ route('inventory.export') }}?format=excel&{{ http_build_query(request()->all()) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="bi bi-file-earmark-excel mr-2"></i>导出Excel（含图片）
+                                        @if($isHistoricalView)
+                                            <span class="text-xs text-orange-600">({{ $filterDate }})</span>
+                                        @endif
                                     </a>
                                 </div>
                             </div>
@@ -187,6 +213,18 @@
             <!-- 高级筛选 -->
             <div class="mt-4">
                 <form method="GET" action="{{ route('inventory.index') }}" class="flex flex-wrap gap-3 items-center">
+                    <!-- 日期筛选 -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-medium text-gray-700">筛选日期:</label>
+                        <input type="date" name="filter_date" 
+                               class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" 
+                               value="{{ $filterDate }}"
+                               max="{{ now()->format('Y-m-d') }}">
+                        @if($isHistoricalView)
+                            <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">历史视图</span>
+                        @endif
+                    </div>
+                    
                     <div class="flex-1 min-w-64">
                         <input type="text" name="keyword" placeholder="<x-lang key="messages.inventory.search_placeholder"/>" 
                                class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" 
@@ -213,7 +251,7 @@
                         <i class="bi bi-search mr-1"></i><x-lang key="messages.inventory.search"/>
                     </button>
                     
-                    @if(request('keyword') || request('status') || request('min_quantity') || request('max_quantity'))
+                    @if(request('keyword') || request('status') || request('min_quantity') || request('max_quantity') || request('filter_date'))
                         <a href="{{ route('inventory.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-all duration-200">
                             <i class="bi bi-x-circle mr-1"></i>清除筛选
                         </a>

@@ -31,94 +31,363 @@ class InventoryController extends Controller
         $currentStoreId = session('current_store_id');
         $user = auth()->user();
         
-        // 构建基础查询
-        $baseQuery = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
-            ->whereHas('product', function($query) {
-                $query->where('type', 'standard');
-            });
-            
-        // 应用仓库权限
-        if ($currentStoreId && $currentStoreId != 0) {
-            $baseQuery->where('store_id', $currentStoreId);
-        } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
-            $baseQuery->whereIn('store_id', $userStoreIds);
-        }
+        // 获取筛选日期，默认为今天
+        $filterDate = $request->input('filter_date', now()->format('Y-m-d'));
+        $isHistoricalView = $request->filled('filter_date') && $filterDate !== now()->format('Y-m-d');
         
-        // 应用搜索条件
-        if ($request->filled('keyword')) {
-            $keyword = $request->keyword;
-            $baseQuery->whereHas('product', function($query) use ($keyword) {
-                $query->where('name', 'like', "%{$keyword}%")
-                      ->orWhere('code', 'like', "%{$keyword}%");
-            });
-        }
-        
-        // 应用状态筛选
-        if ($request->filled('status')) {
-            switch ($request->status) {
-                case 'low':
-                    $baseQuery->where('quantity', '<=', DB::raw('min_quantity'))
-                              ->where('quantity', '>', 0);
-                    break;
-                case 'out':
-                    $baseQuery->where('quantity', 0);
-                    break;
-                case 'normal':
-                    $baseQuery->where('quantity', '>', DB::raw('min_quantity'));
-                    break;
-                case 'overstock':
-                    $baseQuery->where('quantity', '>=', DB::raw('max_quantity'));
-                    break;
+        if ($isHistoricalView) {
+            // 历史库存查询
+            $inventory = $this->getHistoricalInventory($request, $filterDate, $currentStoreId, $user);
+            $stats = $this->calculateHistoricalStats($inventory);
+        } else {
+            // 当前库存查询（原有逻辑）
+            $baseQuery = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
+                ->whereHas('product', function($query) {
+                    $query->where('type', 'standard');
+                });
+                
+            // 应用仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $baseQuery->where('store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $baseQuery->whereIn('store_id', $userStoreIds);
             }
-        }
-        
-        // 应用数量范围筛选
-        if ($request->filled('min_quantity')) {
-            $baseQuery->where('quantity', '>=', $request->min_quantity);
-        }
-        
-        if ($request->filled('max_quantity')) {
-            $baseQuery->where('quantity', '<=', $request->max_quantity);
-        }
-        
-        // 获取分页数据（用于显示列表）
-        $inventory = $baseQuery->orderBy('product_id')->paginate(10)->withQueryString();
-        
-        // 获取统计数据（基于全部数据，不分页）
-        $statsQuery = Inventory::with(['product:id,cost_price'])
-            ->whereHas('product', function($query) {
-                $query->where('type', 'standard');
-            });
             
-        // 应用相同的仓库权限
-        if ($currentStoreId && $currentStoreId != 0) {
-            $statsQuery->where('store_id', $currentStoreId);
-        } elseif (!$user->isSuperAdmin()) {
-            $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
-            $statsQuery->whereIn('store_id', $userStoreIds);
+            // 应用搜索条件
+            if ($request->filled('keyword')) {
+                $keyword = $request->keyword;
+                $baseQuery->whereHas('product', function($query) use ($keyword) {
+                    $query->where('name', 'like', "%{$keyword}%")
+                          ->orWhere('code', 'like', "%{$keyword}%");
+                });
+            }
+            
+            // 应用状态筛选
+            if ($request->filled('status')) {
+                switch ($request->status) {
+                    case 'low':
+                        $baseQuery->where('quantity', '<=', DB::raw('min_quantity'))
+                                  ->where('quantity', '>', 0);
+                        break;
+                    case 'out':
+                        $baseQuery->where('quantity', 0);
+                        break;
+                    case 'normal':
+                        $baseQuery->where('quantity', '>', DB::raw('min_quantity'));
+                        break;
+                    case 'overstock':
+                        $baseQuery->where('quantity', '>=', DB::raw('max_quantity'));
+                        break;
+                }
+            }
+            
+            // 应用数量范围筛选
+            if ($request->filled('min_quantity')) {
+                $baseQuery->where('quantity', '>=', $request->min_quantity);
+            }
+            
+            if ($request->filled('max_quantity')) {
+                $baseQuery->where('quantity', '<=', $request->max_quantity);
+            }
+            
+            // 获取分页数据（用于显示列表）
+            $inventory = $baseQuery->orderBy('product_id')->paginate(10)->withQueryString();
+            
+            // 获取统计数据（基于全部数据，不分页）
+            $statsQuery = Inventory::with(['product:id,cost_price'])
+                ->whereHas('product', function($query) {
+                    $query->where('type', 'standard');
+                });
+                
+            // 应用相同的仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $statsQuery->where('store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $statsQuery->whereIn('store_id', $userStoreIds);
+            }
+            
+            $statsData = $statsQuery->get();
+            
+            // 计算统计数据
+            $stats = [
+                'total_quantity' => $statsData->sum('quantity'),
+                'total_value' => $statsData->sum(function($item) {
+                    return $item->quantity * ($item->product->cost_price ?? 0);
+                }),
+                'low_stock_count' => $statsData->filter(function($item) {
+                    return $item->quantity <= ($item->min_quantity ?? 0) && $item->quantity > 0;
+                })->count(),
+                'out_of_stock_count' => $statsData->filter(function($item) {
+                    return $item->quantity == 0;
+                })->count(),
+            ];
         }
-        
-        $statsData = $statsQuery->get();
-        
-        // 计算统计数据
-        $stats = [
-            'total_quantity' => $statsData->sum('quantity'),
-            'total_value' => $statsData->sum(function($item) {
-                return $item->quantity * ($item->product->cost_price ?? 0);
-            }),
-            'low_stock_count' => $statsData->filter(function($item) {
-                return $item->quantity <= ($item->min_quantity ?? 0) && $item->quantity > 0;
-            })->count(),
-            'out_of_stock_count' => $statsData->filter(function($item) {
-                return $item->quantity == 0;
-            })->count(),
-        ];
         
         // 计算库存周转率（基于过去30天数据）
         $turnoverRate = $this->calculateTurnoverRate($currentStoreId, $user);
         
-        return view('inventory.index', compact('inventory', 'turnoverRate', 'stats'));
+        return view('inventory.index', compact('inventory', 'turnoverRate', 'stats', 'filterDate', 'isHistoricalView'));
+    }
+
+    /**
+     * 获取历史库存数据
+     */
+    private function getHistoricalInventory($request, $filterDate, $currentStoreId, $user)
+    {
+        try {
+            // 获取所有库存记录
+            $inventoryQuery = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
+                ->whereHas('product', function($query) {
+                    $query->where('type', 'standard');
+                });
+
+            // 应用仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $inventoryQuery->where('store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $inventoryQuery->whereIn('store_id', $userStoreIds);
+            }
+
+            $inventories = $inventoryQuery->get();
+            
+            // 为每个库存项计算指定日期的数量
+            foreach ($inventories as $inventory) {
+                $historicalQuantity = $this->calculateHistoricalQuantity($inventory->id, $filterDate);
+                $inventory->historical_quantity = $historicalQuantity;
+                $inventory->quantity = $historicalQuantity; // 临时替换当前数量用于显示
+            }
+
+            // 应用搜索条件
+            if ($request->filled('keyword')) {
+                $keyword = $request->keyword;
+                $inventories = $inventories->filter(function($item) use ($keyword) {
+                    return stripos($item->product->name, $keyword) !== false || 
+                           stripos($item->product->code, $keyword) !== false;
+                });
+            }
+
+            // 应用状态筛选
+            if ($request->filled('status')) {
+                $inventories = $inventories->filter(function($item) use ($request) {
+                    switch ($request->status) {
+                        case 'low':
+                            return $item->quantity <= $item->min_quantity && $item->quantity > 0;
+                        case 'out':
+                            return $item->quantity == 0;
+                        case 'normal':
+                            return $item->quantity > $item->min_quantity;
+                        case 'overstock':
+                            return $item->quantity >= $item->max_quantity;
+                        default:
+                            return true;
+                    }
+                });
+            }
+
+            // 应用数量范围筛选
+            if ($request->filled('min_quantity')) {
+                $inventories = $inventories->filter(function($item) use ($request) {
+                    return $item->quantity >= $request->min_quantity;
+                });
+            }
+
+            if ($request->filled('max_quantity')) {
+                $inventories = $inventories->filter(function($item) use ($request) {
+                    return $item->quantity <= $request->max_quantity;
+                });
+            }
+
+            // 转换为分页集合
+            $perPage = 10;
+            $currentPage = request()->get('page', 1);
+            $items = $inventories->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $inventories->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
+            
+            $paginator->withQueryString();
+            
+            return $paginator;
+        } catch (\Exception $e) {
+            \Log::error('获取历史库存失败: ' . $e->getMessage());
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+        }
+    }
+
+    /**
+     * 计算指定日期的库存数量
+     */
+    private function calculateHistoricalQuantity($inventoryId, $targetDate)
+    {
+        try {
+            // 获取当前库存数量
+            $currentInventory = Inventory::find($inventoryId);
+            if (!$currentInventory) {
+                return 0;
+            }
+
+            $currentQuantity = $currentInventory->quantity;
+            $targetDateTime = \Carbon\Carbon::parse($targetDate)->endOfDay();
+
+            // 获取目标日期之后的所有库存变动记录
+            $records = InventoryRecord::where('inventory_id', $inventoryId)
+                ->where('created_at', '>', $targetDateTime)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // 从当前数量倒推到目标日期的数量
+            $historicalQuantity = $currentQuantity;
+            
+            foreach ($records as $record) {
+                // 反向计算：如果是入库，则减去；如果是出库，则加上
+                if (in_array($record->type, ['in', 'adjust']) && $record->quantity > 0) {
+                    $historicalQuantity -= $record->quantity;
+                } elseif (in_array($record->type, ['out', 'adjust']) && $record->quantity < 0) {
+                    $historicalQuantity -= $record->quantity; // 减去负数等于加上
+                } elseif ($record->type === 'check') {
+                    // 盘点记录需要特殊处理
+                    $historicalQuantity -= $record->quantity;
+                }
+            }
+
+            return max(0, $historicalQuantity); // 确保不为负数
+        } catch (\Exception $e) {
+            \Log::error('计算历史库存数量失败: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 计算历史库存统计数据
+     */
+    private function calculateHistoricalStats($inventory)
+    {
+        $totalQuantity = 0;
+        $totalValue = 0;
+        $lowStockCount = 0;
+        $outOfStockCount = 0;
+
+        foreach ($inventory as $item) {
+            $totalQuantity += $item->quantity;
+            $totalValue += $item->quantity * ($item->product->cost_price ?? 0);
+            
+            if ($item->quantity <= ($item->min_quantity ?? 0) && $item->quantity > 0) {
+                $lowStockCount++;
+            }
+            
+            if ($item->quantity == 0) {
+                $outOfStockCount++;
+            }
+        }
+
+        return [
+            'total_quantity' => $totalQuantity,
+            'total_value' => $totalValue,
+            'low_stock_count' => $lowStockCount,
+            'out_of_stock_count' => $outOfStockCount,
+        ];
+    }
+
+    /**
+     * 获取历史库存数据用于导出
+     */
+    private function getHistoricalInventoryForExport($request, $filterDate, $currentStoreId, $user)
+    {
+        try {
+            // 获取所有库存记录
+            $inventoryQuery = Inventory::with(['product:id,name,code,image,cost_price', 'store:id,name'])
+                ->whereHas('product', function($query) {
+                    $query->where('type', 'standard');
+                });
+
+            // 应用仓库权限
+            if ($currentStoreId && $currentStoreId != 0) {
+                $inventoryQuery->where('store_id', $currentStoreId);
+            } elseif (!$user->isSuperAdmin()) {
+                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                $inventoryQuery->whereIn('store_id', $userStoreIds);
+            }
+
+            $inventories = $inventoryQuery->get();
+            
+            // 转换为导出格式
+            $exportData = collect();
+            
+            foreach ($inventories as $inventory) {
+                $historicalQuantity = $this->calculateHistoricalQuantity($inventory->id, $filterDate);
+                
+                // 应用筛选条件
+                $shouldInclude = true;
+                
+                // 关键词筛选
+                if ($request->filled('keyword')) {
+                    $keyword = $request->keyword;
+                    $shouldInclude = stripos($inventory->product->name, $keyword) !== false || 
+                                   stripos($inventory->product->code, $keyword) !== false;
+                }
+                
+                // 状态筛选
+                if ($shouldInclude && $request->filled('status')) {
+                    switch ($request->status) {
+                        case 'low':
+                            $shouldInclude = $historicalQuantity <= $inventory->min_quantity && $historicalQuantity > 0;
+                            break;
+                        case 'out':
+                            $shouldInclude = $historicalQuantity == 0;
+                            break;
+                        case 'normal':
+                            $shouldInclude = $historicalQuantity > $inventory->min_quantity;
+                            break;
+                        case 'overstock':
+                            $shouldInclude = $historicalQuantity >= $inventory->max_quantity;
+                            break;
+                    }
+                }
+                
+                // 数量范围筛选
+                if ($shouldInclude && $request->filled('min_quantity')) {
+                    $shouldInclude = $historicalQuantity >= $request->min_quantity;
+                }
+                
+                if ($shouldInclude && $request->filled('max_quantity')) {
+                    $shouldInclude = $historicalQuantity <= $request->max_quantity;
+                }
+                
+                if ($shouldInclude) {
+                    $exportData->push((object)[
+                        'id' => $inventory->id,
+                        'product_id' => $inventory->product_id,
+                        'store_id' => $inventory->store_id,
+                        'quantity' => $historicalQuantity,
+                        'min_quantity' => $inventory->min_quantity,
+                        'max_quantity' => $inventory->max_quantity,
+                        'remark' => $inventory->remark,
+                        'created_at' => $inventory->created_at,
+                        'updated_at' => $inventory->updated_at,
+                        'last_check_date' => $inventory->last_check_date,
+                        'product_name' => $inventory->product->name,
+                        'product_code' => $inventory->product->code,
+                        'product_type' => $inventory->product->type ?? 'standard',
+                        'product_image' => $inventory->product->image,
+                        'product_cost_price' => $inventory->product->cost_price,
+                        'store_name' => $inventory->store->name,
+                    ]);
+                }
+            }
+            
+            return $exportData->sortBy('quantity');
+        } catch (\Exception $e) {
+            \Log::error('获取历史库存导出数据失败: ' . $e->getMessage());
+            return collect();
+        }
     }
     
     /**
@@ -718,67 +987,75 @@ class InventoryController extends Controller
             $minQuantity = $request->input('min_quantity');
             $maxQuantity = $request->input('max_quantity');
             $storeId = $request->input('store_id');
+            $filterDate = $request->input('filter_date', now()->format('Y-m-d'));
             $format = $request->input('format', 'csv'); // 支持csv和excel格式
+            $isHistoricalView = $request->filled('filter_date') && $filterDate !== now()->format('Y-m-d');
 
-            // 构建查询
-            $query = DB::table('inventory')
-                ->join('products', 'inventory.product_id', '=', 'products.id')
-                ->join('stores', 'inventory.store_id', '=', 'stores.id')
-                ->select(
-                    'inventory.*',
-                    'products.name as product_name',
-                    'products.code as product_code',
-                    'products.type as product_type',
-                    'products.image as product_image',
-                    'products.cost_price as product_cost_price',
-                    'stores.name as store_name'
-                )
-                ->where('products.type', 'standard'); // 只导出标准商品
+            // 根据是否为历史视图选择不同的数据获取方式
+            if ($isHistoricalView) {
+                // 历史库存数据导出
+                $data = $this->getHistoricalInventoryForExport($request, $filterDate, $currentStoreId, $user);
+            } else {
+                // 当前库存数据导出（原有逻辑）
+                $query = DB::table('inventory')
+                    ->join('products', 'inventory.product_id', '=', 'products.id')
+                    ->join('stores', 'inventory.store_id', '=', 'stores.id')
+                    ->select(
+                        'inventory.*',
+                        'products.name as product_name',
+                        'products.code as product_code',
+                        'products.type as product_type',
+                        'products.image as product_image',
+                        'products.cost_price as product_cost_price',
+                        'stores.name as store_name'
+                    )
+                    ->where('products.type', 'standard'); // 只导出标准商品
 
-            // 应用仓库权限
-            if ($currentStoreId && $currentStoreId != 0) {
-                $query->where('inventory.store_id', $currentStoreId);
-            } elseif (!$user->isSuperAdmin()) {
-                $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
-                $query->whereIn('inventory.store_id', $userStoreIds);
-            }
-
-            // 应用筛选条件
-            if ($keyword) {
-                $query->where(function($q) use ($keyword) {
-                    $q->where('products.name', 'like', "%{$keyword}%")
-                      ->orWhere('products.code', 'like', "%{$keyword}%");
-                });
-            }
-
-            if ($status) {
-                switch ($status) {
-                    case 'low':
-                        $query->where('inventory.quantity', '<=', 'inventory.min_quantity');
-                        break;
-                    case 'out':
-                        $query->where('inventory.quantity', 0);
-                        break;
-                    case 'normal':
-                        $query->where('inventory.quantity', '>', 'inventory.min_quantity');
-                        break;
+                // 应用仓库权限
+                if ($currentStoreId && $currentStoreId != 0) {
+                    $query->where('inventory.store_id', $currentStoreId);
+                } elseif (!$user->isSuperAdmin()) {
+                    $userStoreIds = $user->getAccessibleStores()->pluck('id')->toArray();
+                    $query->whereIn('inventory.store_id', $userStoreIds);
                 }
-            }
 
-            if ($minQuantity !== null) {
-                $query->where('inventory.quantity', '>=', $minQuantity);
-            }
+                // 应用筛选条件
+                if ($keyword) {
+                    $query->where(function($q) use ($keyword) {
+                        $q->where('products.name', 'like', "%{$keyword}%")
+                          ->orWhere('products.code', 'like', "%{$keyword}%");
+                    });
+                }
 
-            if ($maxQuantity !== null) {
-                $query->where('inventory.quantity', '<=', $maxQuantity);
-            }
+                if ($status) {
+                    switch ($status) {
+                        case 'low':
+                            $query->where('inventory.quantity', '<=', 'inventory.min_quantity');
+                            break;
+                        case 'out':
+                            $query->where('inventory.quantity', 0);
+                            break;
+                        case 'normal':
+                            $query->where('inventory.quantity', '>', 'inventory.min_quantity');
+                            break;
+                    }
+                }
 
-            if ($storeId) {
-                $query->where('inventory.store_id', $storeId);
-            }
+                if ($minQuantity !== null) {
+                    $query->where('inventory.quantity', '>=', $minQuantity);
+                }
 
-            // 获取数据
-            $data = $query->orderBy('inventory.quantity', 'asc')->get();
+                if ($maxQuantity !== null) {
+                    $query->where('inventory.quantity', '<=', $maxQuantity);
+                }
+
+                if ($storeId) {
+                    $query->where('inventory.store_id', $storeId);
+                }
+
+                // 获取数据
+                $data = $query->orderBy('inventory.quantity', 'asc')->get();
+            }
 
             if ($data->isEmpty()) {
                 return back()->with('warning', '暂无数据可导出');
@@ -938,7 +1215,8 @@ class InventoryController extends Controller
         }
 
         // 生成文件名
-        $filename = 'inventory_export_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        $datePrefix = $isHistoricalView ? $filterDate : now()->format('Y-m-d');
+        $filename = 'inventory_export_' . $datePrefix . '_' . now()->format('H-i-s') . '.xlsx';
 
         // 创建Excel写入器
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
@@ -961,7 +1239,8 @@ class InventoryController extends Controller
         $csvContent = $this->generateInventoryCSV($data);
 
         // 生成文件名
-        $filename = 'inventory_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        $datePrefix = $isHistoricalView ? $filterDate : now()->format('Y-m-d');
+        $filename = 'inventory_export_' . $datePrefix . '_' . now()->format('H-i-s') . '.csv';
 
         // 返回CSV下载
         return Response::make($csvContent, 200, [
