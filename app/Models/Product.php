@@ -318,8 +318,13 @@ class Product extends Model
         }
         
         // 检查是否是七牛云路径（以products/、sales/等开头）
-        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales)\//', $this->image)) {
-            return \Illuminate\Support\Facades\Storage::disk('qiniu')->url($this->image);
+        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales|stock-in)\//', $this->image)) {
+            try {
+                $qiniuService = app(\App\Services\QiniuStorageService::class);
+                return $qiniuService->url($this->image);
+            } catch (\Exception $e) {
+                return \Illuminate\Support\Facades\Storage::url($this->image);
+            }
         }
         
         // 兼容旧数据：检查图片是否在uploads目录
@@ -334,7 +339,8 @@ class Product extends Model
         
         // 默认尝试使用七牛云，如果失败则使用本地存储
         try {
-            return \Illuminate\Support\Facades\Storage::disk('qiniu')->url($this->image);
+            $qiniuService = app(\App\Services\QiniuStorageService::class);
+            return $qiniuService->url($this->image);
         } catch (\Exception $e) {
             return \Illuminate\Support\Facades\Storage::url($this->image);
         }

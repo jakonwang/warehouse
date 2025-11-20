@@ -89,7 +89,16 @@ trait HasQiniuUpload
             return $path;
         }
 
-        return Storage::disk('qiniu')->url($path);
+        try {
+            $qiniuService = app(\App\Services\QiniuStorageService::class);
+            return $qiniuService->url($path);
+        } catch (\Exception $e) {
+            \Log::warning('获取七牛云URL失败', [
+                'path' => $path,
+                'error' => $e->getMessage()
+            ]);
+            return '';
+        }
     }
 }
 

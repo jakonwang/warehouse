@@ -19,9 +19,10 @@ if (!function_exists('get_image_url')) {
         }
 
         // 检查是否是七牛云路径（以products/、sales/等开头）
-        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales)\//', $path)) {
+        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales|stock-in)\//', $path)) {
             try {
-                return \Illuminate\Support\Facades\Storage::disk('qiniu')->url($path);
+                $qiniuService = app(\App\Services\QiniuStorageService::class);
+                return $qiniuService->url($path);
             } catch (\Exception $e) {
                 // 如果七牛云配置有问题，回退到本地存储
                 return \Illuminate\Support\Facades\Storage::url($path);
@@ -40,7 +41,8 @@ if (!function_exists('get_image_url')) {
 
         // 默认尝试使用七牛云，如果失败则使用本地存储
         try {
-            return \Illuminate\Support\Facades\Storage::disk('qiniu')->url($path);
+            $qiniuService = app(\App\Services\QiniuStorageService::class);
+            return $qiniuService->url($path);
         } catch (\Exception $e) {
             return \Illuminate\Support\Facades\Storage::url($path);
         }
