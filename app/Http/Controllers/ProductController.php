@@ -28,8 +28,8 @@ class ProductController extends Controller
             abort(403, '您没有权限查看商品');
         }
 
-        // 构建查询
-        $query = DB::table('products');
+        // 构建查询 - 使用Eloquent模型
+        $query = Product::query();
 
         // 搜索过滤
         if ($request->filled('search')) {
