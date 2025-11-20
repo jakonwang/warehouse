@@ -186,7 +186,7 @@
                             <!-- 悬停操作按钮 -->
                             @if(auth()->user()->canManageProducts())
                                 <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                    <button @click="editProduct({{ json_encode($product) }})" 
+                                    <button @click="editProduct({{ json_encode(array_merge($product->toArray(), ['image_url' => get_image_url($product->image)])) }})" 
                                             class="p-2 bg-white/90 hover:bg-white rounded-lg shadow-sm transition-colors border border-gray-200">
                                         <i class="bi bi-pencil text-blue-600"></i>
                                     </button>
@@ -265,7 +265,7 @@
                             <!-- 底部操作按钮 -->
                             @if(auth()->user()->canManageProducts())
                                 <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                                    <button @click="editProduct({{ json_encode($product) }})" 
+                                    <button @click="editProduct({{ json_encode(array_merge($product->toArray(), ['image_url' => get_image_url($product->image)])) }})" 
                                             class="px-3 py-1 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors">
                                         <i class="bi bi-pencil mr-1"></i>编辑
                                     </button>
@@ -376,7 +376,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         @if(auth()->user()->canManageProducts())
                                             <div class="flex space-x-2">
-                                                <button @click="editProduct({{ json_encode($product) }})" 
+                                                <button @click="editProduct({{ json_encode(array_merge($product->toArray(), ['image_url' => get_image_url($product->image)])) }})" 
                                                         class="text-blue-600 hover:text-blue-900">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
@@ -672,10 +672,11 @@ function productManager() {
         },
         
         editProduct(product) {
+            // 使用服务器端生成的image_url，如果没有则使用image字段
             this.editingItem = { 
                 ...product,
                 is_active: Boolean(product.is_active),
-                image: product.image ? (product.image.includes('uploads/') ? '{{ asset('') }}' + product.image : '{{ asset('storage') }}/' + product.image) : null
+                image: product.image_url || product.image || null
             };
         },
         
