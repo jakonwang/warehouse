@@ -49,20 +49,12 @@ trait HasQiniuUpload
         }
 
         try {
-            // 如果是完整URL，提取路径
-            if (str_starts_with($path, 'http')) {
-                // 从URL中提取路径
-                $domain = config('filesystems.disks.qiniu.domain');
-                if ($domain && str_contains($path, $domain)) {
-                    $path = str_replace(rtrim($domain, '/') . '/', '', $path);
-                } else {
-                    // 如果无法提取，尝试从URL解析
-                    $parsed = parse_url($path);
-                    $path = ltrim($parsed['path'] ?? '', '/');
-                }
-            }
-
-            return Storage::disk('qiniu')->delete($path);
+            // 直接使用QiniuStorageService删除
+            $qiniuService = app(\App\Services\QiniuStorageService::class);
+            $result = $qiniuService->delete($path);
+            
+            // 确保返回bool类型
+            return (bool) $result;
         } catch (\Exception $e) {
             \Log::warning('删除七牛云文件失败', [
                 'path' => $path,
