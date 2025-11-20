@@ -274,12 +274,13 @@
                                 
                                 <!-- 当前图片显示 -->
                                 <div class="mt-4">
-                                    @if($product->image && $product->image_url)
+                                    @if($product->image)
                                         <div id="currentImage">
                                             <p class="text-sm text-gray-600 mb-2">当前图片：</p>
-                                            <img src="{{ $product->image_url }}" 
+                                            <img src="{{ get_image_url($product->image) }}" 
                                                  alt="当前图片" 
-                                                 class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                                                 class="w-full h-48 object-cover rounded-lg border border-gray-200"
+                                                 onerror="this.parentElement.innerHTML='<div class=\'w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center\'><div class=\'text-center\'><i class=\'bi bi-image text-gray-400 text-3xl\'></i><p class=\'text-gray-500 text-sm mt-2\'>图片加载失败</p></div></div>'">
                                         </div>
                                     @else
                                         <div id="currentImage" class="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">

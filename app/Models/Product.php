@@ -313,7 +313,7 @@ class Product extends Model
         }
         
         // 如果已经是完整URL（七牛云URL），直接返回
-        if (str_starts_with($this->image, 'http')) {
+        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
             return $this->image;
         }
         
@@ -323,6 +323,7 @@ class Product extends Model
                 $qiniuService = app(\App\Services\QiniuStorageService::class);
                 return $qiniuService->url($this->image);
             } catch (\Exception $e) {
+                // 如果七牛云服务不可用，回退到本地存储
                 return \Illuminate\Support\Facades\Storage::url($this->image);
             }
         }
