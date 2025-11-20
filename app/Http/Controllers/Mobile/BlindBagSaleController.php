@@ -10,6 +10,7 @@ use App\Models\BlindBagDetail;
 use App\Models\BlindBagDelivery;
 use App\Models\Inventory;
 use App\Models\PriceSeries;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 class BlindBagSaleController extends Controller
 {
+    use HasQiniuUpload;
     /**
      * 显示盲袋销售页面
      */
@@ -83,7 +85,7 @@ class BlindBagSaleController extends Controller
             // 处理照片上传
             $photoPath = null;
             if ($request->hasFile('photo')) {
-                $photoPath = $request->file('photo')->store('blind-bag-sales', 'public');
+                $photoPath = $this->uploadToQiniu($request->file('photo'), 'blind-bag-sales');
             }
 
             // 创建主销售记录

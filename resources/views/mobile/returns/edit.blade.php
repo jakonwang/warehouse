@@ -76,7 +76,7 @@
                     @if($returnRecord->image_path)
                         <div class="mb-3">
                             <p class="text-sm text-gray-600 mb-2">🖼️ <x-lang key="mobile.returns.current_image"/>：</p>
-                            <img src="{{ asset('storage/' . $returnRecord->image_path) }}" alt="<x-lang key="mobile.returns.current_return_photo"/>" class="w-full max-h-48 object-contain rounded-lg border border-gray-200 shadow-md">
+                            <img src="{{ get_image_url($returnRecord->image_path) }}" alt="<x-lang key="mobile.returns.current_return_photo"/>" class="w-full max-h-48 object-contain rounded-lg border border-gray-200 shadow-md">
                         </div>
                     @endif
                     

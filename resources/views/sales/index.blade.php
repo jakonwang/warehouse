@@ -299,10 +299,10 @@
                                 <div class="product-images-container">
                                     @if($sale->image_path)
                                         <div class="product-image-wrapper">
-                                            <img src="{{ Storage::url($sale->image_path) }}" 
+                                            <img src="{{ get_image_url($sale->image_path) }}" 
                                                  alt="销售凭证" 
                                                  class="product-image" 
-                                                 onclick="openImageModal('{{ Storage::url($sale->image_path) }}', '销售凭证')"
+                                                 onclick="openImageModal('{{ get_image_url($sale->image_path) }}', '销售凭证')"
                                                  title="销售凭证">
                                         </div>
                                     @else

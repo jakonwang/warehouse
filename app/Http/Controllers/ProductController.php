@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    use HasQiniuUpload;
     public function __construct()
     {
         $this->middleware('auth');
@@ -137,10 +139,10 @@ class ProductController extends Controller
                 $validated['code'] = $this->generateProductCode();
             }
 
-            // 处理图片上传
+            // 处理图片上传到七牛云
             if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('products', 'public');
-                $validated['image'] = $imagePath;
+                $imageUrl = $this->uploadToQiniu($request->file('image'), 'products');
+                $validated['image'] = $imageUrl;
             }
 
             // 创建商品
@@ -244,15 +246,15 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
 
-            // 处理图片上传
+            // 处理图片上传到七牛云
             if ($request->hasFile('image')) {
                 // 删除旧图片
                 if ($product->image) {
-                    Storage::disk('public')->delete($product->image);
+                    $this->deleteFromQiniu($product->image);
                 }
                 
-                $imagePath = $request->file('image')->store('products', 'public');
-                $validated['image'] = $imagePath;
+                $imageUrl = $this->uploadToQiniu($request->file('image'), 'products');
+                $validated['image'] = $imageUrl;
             }
 
             // 更新商品（保持原有编码不变）
@@ -300,7 +302,7 @@ class ProductController extends Controller
 
             // 删除商品图片
             if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+                $this->deleteFromQiniu($product->image);
             }
 
             // 删除商品

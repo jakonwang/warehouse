@@ -234,7 +234,7 @@
             @if($sale->image_path)
                 <div class="mb-4">
                     <p class="text-sm text-gray-600 mb-2">当前图片：</p>
-                    <img src="{{ asset('storage/' . $sale->image_path) }}" alt="销售凭证" 
+                    <img src="{{ get_image_url($sale->image_path) }}" alt="销售凭证" 
                          class="w-full max-h-60 object-contain rounded-lg border border-gray-200">
                 </div>
             @endif

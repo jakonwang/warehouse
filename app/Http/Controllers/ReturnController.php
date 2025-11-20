@@ -7,12 +7,14 @@ use App\Models\ReturnDetail;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Store;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ReturnController extends Controller
 {
+    use HasQiniuUpload;
     /**
      * 显示退货记录列表
      */
@@ -120,7 +122,7 @@ class ReturnController extends Controller
                 $file = $request->file('image');
                 if ($file->isValid()) {
                     try {
-                        $record->image_path = $file->store('returns', 'public');
+                        $record->image_path = $this->uploadToQiniu($file, 'returns');
                     } catch (\Exception $e) {
                         \Log::error('后台退货图片上传失败', [
                             'error' => $e->getMessage(),
@@ -261,7 +263,7 @@ class ReturnController extends Controller
             }
 
             if ($returnRecord->image_path) {
-                Storage::disk('public')->delete($returnRecord->image_path);
+                $this->deleteFromQiniu($returnRecord->image_path);
             }
 
             $returnRecord->returnDetails()->delete();
@@ -396,7 +398,7 @@ class ReturnController extends Controller
             $record->user_id = auth()->id();
 
             if ($request->hasFile('image')) {
-                $record->image_path = $request->file('image')->store('returns', 'public');
+                $record->image_path = $this->uploadToQiniu($request->file('image'), 'returns');
             }
 
             $record->save();
@@ -509,9 +511,9 @@ class ReturnController extends Controller
             $returnRecord->user_id = auth()->id();
             if ($request->hasFile('image')) {
                 if ($returnRecord->image_path) {
-                    Storage::disk('public')->delete($returnRecord->image_path);
+                    $this->deleteFromQiniu($returnRecord->image_path);
                 }
-                $returnRecord->image_path = $request->file('image')->store('returns', 'public');
+                $returnRecord->image_path = $this->uploadToQiniu($request->file('image'), 'returns');
             }
             $returnRecord->save();
             // 删除原明细
@@ -576,7 +578,7 @@ class ReturnController extends Controller
             }
 
             if ($returnRecord->image_path) {
-                Storage::disk('public')->delete($returnRecord->image_path);
+                $this->deleteFromQiniu($returnRecord->image_path);
             }
 
             $returnRecord->returnDetails()->delete();

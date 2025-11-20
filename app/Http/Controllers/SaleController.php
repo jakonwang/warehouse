@@ -6,6 +6,7 @@ use App\Models\Sale;
 use App\Models\Product;
 use App\Models\Inventory;
 use App\Models\SaleDetail;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 
 class SaleController extends Controller
 {
+    use HasQiniuUpload;
     /**
      * 显示销售记录列表
      */
@@ -192,7 +194,7 @@ class SaleController extends Controller
             $sale->sale_type = $request->sales_mode === 'standard' ? Sale::SALE_TYPE_STANDARD : Sale::SALE_TYPE_BLIND_BAG;
 
             if ($request->hasFile('image')) {
-                $sale->image_path = $request->file('image')->store('sales', 'public');
+                $sale->image_path = $this->uploadToQiniu($request->file('image'), 'sales');
             }
 
             $sale->save();
@@ -345,12 +347,12 @@ class SaleController extends Controller
             $sale->customer_phone = $request->customer_phone;
             $sale->remark = $request->remark;
 
-            // 处理图片上传
+            // 处理图片上传到七牛云
             if ($request->hasFile('image')) {
                 if ($sale->image_path) {
-                    Storage::disk('public')->delete($sale->image_path);
+                    $this->deleteFromQiniu($sale->image_path);
                 }
-                $sale->image_path = $request->file('image')->store('sales', 'public');
+                $sale->image_path = $this->uploadToQiniu($request->file('image'), 'sales');
             }
 
             $sale->save();
@@ -442,7 +444,7 @@ class SaleController extends Controller
             DB::beginTransaction();
 
             if ($sale->image_path) {
-                Storage::disk('public')->delete($sale->image_path);
+                $this->deleteFromQiniu($sale->image_path);
             }
 
             $sale->saleDetails()->delete();

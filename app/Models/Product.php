@@ -311,22 +311,33 @@ class Product extends Model
         if (!$this->image) {
             return null;
         }
+        
+        // 如果已经是完整URL（七牛云URL），直接返回
         if (str_starts_with($this->image, 'http')) {
             return $this->image;
         }
         
-        // 检查图片是否在uploads目录
+        // 检查是否是七牛云路径（以products/、sales/等开头）
+        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales)\//', $this->image)) {
+            return \Illuminate\Support\Facades\Storage::disk('qiniu')->url($this->image);
+        }
+        
+        // 兼容旧数据：检查图片是否在uploads目录
         if (str_contains($this->image, 'uploads/')) {
             return asset($this->image);
         }
         
-        // 检查图片是否在storage目录
+        // 兼容旧数据：检查图片是否在storage目录
         if (str_contains($this->image, 'storage/')) {
             return asset($this->image);
         }
         
-        // 默认使用Storage::url
-        return \Illuminate\Support\Facades\Storage::url($this->image);
+        // 默认尝试使用七牛云，如果失败则使用本地存储
+        try {
+            return \Illuminate\Support\Facades\Storage::disk('qiniu')->url($this->image);
+        } catch (\Exception $e) {
+            return \Illuminate\Support\Facades\Storage::url($this->image);
+        }
     }
 
     /**

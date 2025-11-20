@@ -257,7 +257,7 @@
                                         if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
                                             $fullUrl = $imagePath;
                                         } else {
-                                            $fullUrl = asset('storage/' . $cleanImagePath);
+                                            $fullUrl = get_image_url($cleanImagePath);
                                         }
                                     @endphp
                                     <img src="{{ $fullUrl }}" alt="{{ $item->product_name }}" 

@@ -326,7 +326,7 @@
                         
                         @if($sale->image_path)
                             <div class="mb-4">
-                                <img src="{{ asset('storage/' . $sale->image_path) }}" alt="销售凭证" class="w-full max-h-60 object-contain rounded-lg">
+                                <img src="{{ get_image_url($sale->image_path) }}" alt="销售凭证" class="w-full max-h-60 object-contain rounded-lg">
                             </div>
                         @endif
                         

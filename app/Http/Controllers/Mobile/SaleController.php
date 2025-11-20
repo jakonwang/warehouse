@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\BlindBagDelivery;
 use App\Models\Store;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,7 @@ use Carbon\Carbon;
 
 class SaleController extends Controller
 {
+    use HasQiniuUpload;
     public function __construct()
     {
         $this->middleware('auth');
@@ -209,7 +211,7 @@ class SaleController extends Controller
                 $file = $request->file('image');
                 if ($file->isValid()) {
                     try {
-                        $imagePath = $file->store('sales', 'public');
+                        $imagePath = $this->uploadToQiniu($file, 'sales');
                         
                     } catch (\Exception $e) {
                         \Log::error('图片上传失败', [
@@ -425,15 +427,15 @@ class SaleController extends Controller
             $sale->customer_phone = $request->customer_phone;
             $sale->remark = $request->remark;
 
-            // 处理图片上传
+            // 处理图片上传到七牛云
             if ($request->hasFile('image')) {
                 if ($sale->image_path) {
-                    Storage::disk('public')->delete($sale->image_path);
+                    $this->deleteFromQiniu($sale->image_path);
                 }
                 
                 $file = $request->file('image');
                 if ($file->isValid()) {
-                    $sale->image_path = $file->store('sales', 'public');
+                    $sale->image_path = $this->uploadToQiniu($file, 'sales');
                 }
             }
 

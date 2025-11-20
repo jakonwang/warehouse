@@ -43,7 +43,7 @@
                     @if($stockInRecord->image_path)
                         <div class="mb-4">
                             <h6>图片</h6>
-                            <img src="{{ asset('storage/' . $stockInRecord->image_path) }}" alt="入库图片" class="img-fluid" style="max-height: 300px;">
+                            <img src="{{ get_image_url($stockInRecord->image_path) }}" alt="入库图片" class="img-fluid" style="max-height: 300px;">
                         </div>
                     @endif
 

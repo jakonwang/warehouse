@@ -2321,7 +2321,110 @@ php artisan cache:clear
 - 响应式布局适配不同屏幕尺寸
 - 完整的多语言支持（中文、英文、越南语）
 
-## 15. 退货界面商品显示修复 (2025-01-XX)
+## 15. 七牛云存储集成 (2025-01-XX)
+
+### 15.1 功能概述
+
+系统已集成七牛云对象存储服务，所有图片上传和显示功能已迁移到七牛云服务器，提升图片访问速度和系统性能。
+
+### 15.2 配置说明
+
+#### 15.2.1 环境变量配置
+
+在 `.env` 文件中添加以下配置：
+
+```env
+# 七牛云配置
+QINIU_ACCESS_KEY=Gr61Z33pLjdunaMnwQDCuTJaHOeJa-cwibVgIPbF
+QINIU_SECRET_KEY=QuAbFxTsqS6AGKfPAA8aufp_QTEE0rcCC7Q7l6R9
+QINIU_BUCKET=videowarehouse
+QINIU_DOMAIN=https://storage.banono-us.com
+```
+
+#### 15.2.2 安装依赖
+
+运行以下命令安装七牛云SDK：
+
+```bash
+composer install
+```
+
+### 15.3 功能特性
+
+#### 15.3.1 图片上传
+
+所有图片上传功能已迁移到七牛云：
+
+- ✅ **商品图片**：`ProductController` - 商品创建和编辑
+- ✅ **销售凭证**：`SaleController` 和 `Mobile/SaleController` - 销售记录
+- ✅ **退货凭证**：`ReturnController` - 退货记录
+- ✅ **入库凭证**：`StockInController` - 入库记录
+- ✅ **出库凭证**：`StockOutController` - 出库记录
+- ✅ **盲袋销售照片**：`Mobile/BlindBagSaleController` - 盲袋销售
+
+#### 15.3.2 图片显示
+
+所有图片显示功能已支持七牛云URL：
+
+- ✅ 使用 `get_image_url()` 辅助函数统一处理图片URL
+- ✅ 自动识别七牛云URL和本地存储路径
+- ✅ 兼容旧数据，支持平滑迁移
+
+#### 15.3.3 批量迁移
+
+提供批量迁移脚本，将现有图片上传到七牛云：
+
+```bash
+php scripts/migrate_images_to_qiniu.php
+```
+
+### 15.4 技术实现
+
+#### 15.4.1 核心组件
+
+- **QiniuStorageService**：七牛云存储服务类
+- **HasQiniuUpload Trait**：图片上传辅助Trait
+- **ImageHelper**：图片URL辅助函数
+- **QiniuFilesystemAdapter**：七牛云文件系统适配器
+
+#### 15.4.2 存储路径规范
+
+- 商品图片：`products/文件名`
+- 销售凭证：`sales/文件名`
+- 退货凭证：`returns/文件名`
+- 入库凭证：`stock-in/文件名`
+- 出库凭证：`stock-out/文件名`
+- 盲袋销售照片：`blind-bag-sales/文件名`
+
+### 15.5 兼容性说明
+
+系统完全兼容旧数据：
+
+- ✅ 自动识别七牛云URL和本地存储路径
+- ✅ 支持混合使用（部分图片在七牛云，部分在本地）
+- ✅ 平滑迁移，不影响系统使用
+
+### 15.6 相关文件
+
+- `app/Services/QiniuStorageService.php` - 七牛云存储服务
+- `app/Filesystem/QiniuFilesystemAdapter.php` - 文件系统适配器
+- `app/Providers/QiniuServiceProvider.php` - 服务提供者
+- `app/Traits/HasQiniuUpload.php` - 上传辅助Trait
+- `app/Helpers/ImageHelper.php` - 图片URL辅助函数
+- `scripts/migrate_images_to_qiniu.php` - 批量迁移脚本
+- `config/filesystems.php` - 存储配置
+- `docs/qiniu-storage-integration.md` - 详细文档
+
+### 15.7 使用说明
+
+1. **配置七牛云**：在 `.env` 文件中配置七牛云参数
+2. **安装依赖**：运行 `composer install` 安装七牛云SDK
+3. **迁移现有图片**：运行 `php scripts/migrate_images_to_qiniu.php` 迁移现有图片
+4. **验证功能**：测试图片上传和显示功能
+
+**详细文档**：参考 `docs/qiniu-storage-integration.md`
+
+## 16. 退货界面商品显示修复 (2025-01-XX)
 
 ### 15.1 问题描述
 

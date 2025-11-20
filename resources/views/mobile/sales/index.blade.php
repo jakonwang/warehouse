@@ -217,10 +217,10 @@
                                 <div class="text-xs text-gray-600 mb-2"><x-lang key="mobile.sales.sale_proof"/>:</div>
                                 <div class="flex flex-wrap gap-2">
                                     <div class="relative">
-                                        <img src="{{ Storage::url($sale->image_path) }}" 
+                                        <img src="{{ get_image_url($sale->image_path) }}" 
                                              alt="销售凭证" 
                                              class="w-12 h-12 object-cover rounded-lg border border-gray-200 cursor-pointer" 
-                                             onclick="openMobileImageModal('{{ Storage::url($sale->image_path) }}', '销售凭证')"
+                                             onclick="openMobileImageModal('{{ get_image_url($sale->image_path) }}', '销售凭证')"
                                              title="销售凭证">
                                     </div>
                                 </div>

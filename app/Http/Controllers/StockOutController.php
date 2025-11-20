@@ -6,12 +6,14 @@ use App\Models\StockOutRecord;
 use App\Models\StockOutDetail;
 use App\Models\Inventory;
 use App\Models\PriceSeries;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class StockOutController extends Controller
 {
+    use HasQiniuUpload;
     /**
      * 显示出库记录列表
      */
@@ -83,7 +85,7 @@ class StockOutController extends Controller
             $record->user_id = auth()->id();
 
             if ($request->hasFile('image')) {
-                $record->image_path = $request->file('image')->store('stock-out', 'public');
+                $record->image_path = $this->uploadToQiniu($request->file('image'), 'stock-out');
             }
 
             $record->save();
@@ -230,7 +232,7 @@ class StockOutController extends Controller
             }
 
             if ($stockOutRecord->image_path) {
-                Storage::disk('public')->delete($stockOutRecord->image_path);
+                $this->deleteFromQiniu($stockOutRecord->image_path);
             }
 
             $stockOutRecord->stockOutDetails()->delete();

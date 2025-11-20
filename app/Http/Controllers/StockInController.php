@@ -6,12 +6,14 @@ use App\Models\StockInRecord;
 use App\Models\StockInDetail;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Traits\HasQiniuUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class StockInController extends Controller
 {
+    use HasQiniuUpload;
     /**
      * 显示入库记录列表
      */
@@ -212,7 +214,7 @@ class StockInController extends Controller
             }
 
             if ($stockInRecord->image_path) {
-                Storage::disk('public')->delete($stockInRecord->image_path);
+                $this->deleteFromQiniu($stockInRecord->image_path);
             }
 
             $stockInRecord->stockInDetails()->delete();
