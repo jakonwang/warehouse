@@ -312,38 +312,46 @@ class Product extends Model
             return null;
         }
         
+        // 清理路径：移除可能被错误添加的前缀
+        $imagePath = trim($this->image);
+        
+        // 如果路径以 storage/ 开头，但后面是完整URL，提取出URL部分
+        if (preg_match('/^storage\/https?:\/\//', $imagePath)) {
+            $imagePath = preg_replace('/^storage\//', '', $imagePath);
+        }
+        
         // 如果已经是完整URL（七牛云URL），直接返回
-        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
-            return $this->image;
+        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
+            return $imagePath;
         }
         
         // 检查是否是七牛云路径（以products/、sales/等开头）
-        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales|stock-in)\//', $this->image)) {
+        if (preg_match('/^(products|sales|returns|stock-out|blind-bag-sales|stock-in)\//', $imagePath)) {
             try {
                 $qiniuService = app(\App\Services\QiniuStorageService::class);
-                return $qiniuService->url($this->image);
+                return $qiniuService->url($imagePath);
             } catch (\Exception $e) {
                 // 如果七牛云服务不可用，回退到本地存储
-                return \Illuminate\Support\Facades\Storage::url($this->image);
+                return \Illuminate\Support\Facades\Storage::url($imagePath);
             }
         }
         
         // 兼容旧数据：检查图片是否在uploads目录
-        if (str_contains($this->image, 'uploads/')) {
-            return asset($this->image);
+        if (str_contains($imagePath, 'uploads/')) {
+            return asset($imagePath);
         }
         
-        // 兼容旧数据：检查图片是否在storage目录
-        if (str_contains($this->image, 'storage/')) {
-            return asset($this->image);
+        // 兼容旧数据：检查图片是否在storage目录（但不是完整URL）
+        if (str_contains($imagePath, 'storage/') && !str_starts_with($imagePath, 'http')) {
+            return asset($imagePath);
         }
         
         // 默认尝试使用七牛云，如果失败则使用本地存储
         try {
             $qiniuService = app(\App\Services\QiniuStorageService::class);
-            return $qiniuService->url($this->image);
+            return $qiniuService->url($imagePath);
         } catch (\Exception $e) {
-            return \Illuminate\Support\Facades\Storage::url($this->image);
+            return \Illuminate\Support\Facades\Storage::url($imagePath);
         }
     }
 
