@@ -220,6 +220,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', [\App\Http\Controllers\StoreTransferController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\StoreTransferController::class, 'store'])->name('store');
         Route::get('/{storeTransfer}', [\App\Http\Controllers\StoreTransferController::class, 'show'])->name('show');
+        Route::post('/batch-approve', [\App\Http\Controllers\StoreTransferController::class, 'batchApprove'])->name('batch-approve');
+        Route::post('/batch-reject', [\App\Http\Controllers\StoreTransferController::class, 'batchReject'])->name('batch-reject');
         Route::post('/{storeTransfer}/approve', [\App\Http\Controllers\StoreTransferController::class, 'approve'])->name('approve');
         Route::post('/{storeTransfer}/reject', [\App\Http\Controllers\StoreTransferController::class, 'reject'])->name('reject');
         Route::post('/{storeTransfer}/complete', [\App\Http\Controllers\StoreTransferController::class, 'complete'])->name('complete');

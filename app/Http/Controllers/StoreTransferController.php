@@ -487,4 +487,152 @@ class StoreTransferController extends Controller
             return back()->withErrors(['error' => '删除失败：' . $e->getMessage()]);
         }
     }
+
+    /**
+     * 批量审批调拨申请
+     */
+    public function batchApprove(Request $request)
+    {
+        $request->validate([
+            'transfer_ids' => 'required|array',
+            'transfer_ids.*' => 'required|exists:store_transfers,id',
+        ]);
+
+        $transferIds = $request->transfer_ids;
+        $user = Auth::user();
+
+        try {
+            DB::beginTransaction();
+
+            $successCount = 0;
+            $failCount = 0;
+            $failReasons = [];
+
+            foreach ($transferIds as $transferId) {
+                $transfer = StoreTransfer::find($transferId);
+                
+                if (!$transfer) {
+                    $failCount++;
+                    $failReasons[] = "调拨ID {$transferId} 不存在";
+                    continue;
+                }
+
+                // 检查是否可以审批
+                if (!$transfer->canBeApproved()) {
+                    $failCount++;
+                    $failReasons[] = "调拨单号 {$transfer->transfer_no} 无法审批（当前状态：{$transfer->status_text}）";
+                    continue;
+                }
+
+                // 检查权限
+                if (!$user->isSuperAdmin()) {
+                    $userStores = $user->stores->pluck('id');
+                    if (!in_array($transfer->source_store_id, $userStores->toArray())) {
+                        $failCount++;
+                        $failReasons[] = "调拨单号 {$transfer->transfer_no} 无权审批";
+                        continue;
+                    }
+                }
+
+                // 审批
+                $transfer->update([
+                    'status' => StoreTransfer::STATUS_APPROVED,
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                ]);
+
+                $successCount++;
+            }
+
+            DB::commit();
+
+            $message = "批量审批完成：成功 {$successCount} 条";
+            if ($failCount > 0) {
+                $message .= "，失败 {$failCount} 条";
+                if (count($failReasons) <= 5) {
+                    $message .= "。失败原因：" . implode('；', $failReasons);
+                }
+            }
+
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => '批量审批失败：' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * 批量拒绝调拨申请
+     */
+    public function batchReject(Request $request)
+    {
+        $request->validate([
+            'transfer_ids' => 'required|array',
+            'transfer_ids.*' => 'required|exists:store_transfers,id',
+        ]);
+
+        $transferIds = $request->transfer_ids;
+        $user = Auth::user();
+
+        try {
+            DB::beginTransaction();
+
+            $successCount = 0;
+            $failCount = 0;
+            $failReasons = [];
+
+            foreach ($transferIds as $transferId) {
+                $transfer = StoreTransfer::find($transferId);
+                
+                if (!$transfer) {
+                    $failCount++;
+                    $failReasons[] = "调拨ID {$transferId} 不存在";
+                    continue;
+                }
+
+                // 检查是否可以拒绝
+                if (!$transfer->canBeApproved()) {
+                    $failCount++;
+                    $failReasons[] = "调拨单号 {$transfer->transfer_no} 无法拒绝（当前状态：{$transfer->status_text}）";
+                    continue;
+                }
+
+                // 检查权限
+                if (!$user->isSuperAdmin()) {
+                    $userStores = $user->stores->pluck('id');
+                    if (!in_array($transfer->source_store_id, $userStores->toArray())) {
+                        $failCount++;
+                        $failReasons[] = "调拨单号 {$transfer->transfer_no} 无权拒绝";
+                        continue;
+                    }
+                }
+
+                // 拒绝
+                $transfer->update([
+                    'status' => StoreTransfer::STATUS_REJECTED,
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                ]);
+
+                $successCount++;
+            }
+
+            DB::commit();
+
+            $message = "批量拒绝完成：成功 {$successCount} 条";
+            if ($failCount > 0) {
+                $message .= "，失败 {$failCount} 条";
+                if (count($failReasons) <= 5) {
+                    $message .= "。失败原因：" . implode('；', $failReasons);
+                }
+            }
+
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => '批量拒绝失败：' . $e->getMessage()]);
+        }
+    }
 } 

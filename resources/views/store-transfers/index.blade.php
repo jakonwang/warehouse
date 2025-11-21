@@ -75,14 +75,40 @@
 
     <!-- 调拨列表 -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">调拨记录</h3>
+            @if(auth()->user()->isSuperAdmin() && $transfers->where('status', 'pending')->count() > 0)
+            <div class="flex items-center space-x-3" id="batchActions" style="display: none;">
+                <span class="text-sm text-gray-600" id="selectedCount">已选择 <span class="font-medium">0</span> 条</span>
+                <form method="POST" action="{{ route('store-transfers.batch-approve') }}" id="batchApproveForm" class="inline">
+                    @csrf
+                    <div id="batchApproveInputs"></div>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200" onclick="return confirm('确认批量审批通过选中的调拨申请？')">
+                        <i class="bi bi-check-circle mr-2"></i>
+                        批量审批
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('store-transfers.batch-reject') }}" id="batchRejectForm" class="inline">
+                    @csrf
+                    <div id="batchRejectInputs"></div>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200" onclick="return confirm('确认批量拒绝选中的调拨申请？')">
+                        <i class="bi bi-x-circle mr-2"></i>
+                        批量拒绝
+                    </button>
+                </form>
+            </div>
+            @endif
         </div>
         
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        @if(auth()->user()->isSuperAdmin())
+                        <th class="px-6 py-3 text-left">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                        </th>
+                        @endif
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">调拨单号</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">源仓库</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">目标仓库</th>
@@ -96,7 +122,16 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($transfers as $transfer)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 {{ $transfer->canBeApproved() ? 'bg-yellow-50' : '' }}">
+                        @if(auth()->user()->isSuperAdmin())
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($transfer->canBeApproved())
+                            <input type="checkbox" name="transfer_ids[]" value="{{ $transfer->id }}" class="transfer-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                            @else
+                            <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                        @endif
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {{ $transfer->transfer_no }}
                         </td>
@@ -176,7 +211,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="{{ auth()->user()->isSuperAdmin() ? '10' : '9' }}" class="px-6 py-4 text-center text-gray-500">
                             暂无调拨记录
                         </td>
                     </tr>
@@ -205,6 +240,111 @@ document.addEventListener('DOMContentLoaded', function() {
         dateFormat: 'Y-m-d',
         placeholder: '选择日期范围'
     });
+
+    // 批量选择功能
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const transferCheckboxes = document.querySelectorAll('.transfer-checkbox');
+    const batchActions = document.getElementById('batchActions');
+    const selectedCount = document.getElementById('selectedCount');
+    const batchApproveForm = document.getElementById('batchApproveForm');
+    const batchRejectForm = document.getElementById('batchRejectForm');
+    const batchApproveInputs = document.getElementById('batchApproveInputs');
+    const batchRejectInputs = document.getElementById('batchRejectInputs');
+
+    if (selectAllCheckbox) {
+        // 全选/取消全选
+        selectAllCheckbox.addEventListener('change', function() {
+            transferCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBatchActions();
+        });
+
+        // 单个复选框变化
+        transferCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllState();
+                updateBatchActions();
+            });
+        });
+
+        // 更新全选状态
+        function updateSelectAllState() {
+            const checkedCount = Array.from(transferCheckboxes).filter(cb => cb.checked).length;
+            selectAllCheckbox.checked = checkedCount === transferCheckboxes.length && transferCheckboxes.length > 0;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < transferCheckboxes.length;
+        }
+
+        // 更新批量操作按钮
+        function updateBatchActions() {
+            const checkedIds = Array.from(transferCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            if (checkedIds.length > 0) {
+                batchActions.style.display = 'flex';
+                selectedCount.innerHTML = '已选择 <span class="font-medium">' + checkedIds.length + '</span> 条';
+                
+                // 更新批量审批表单的隐藏输入
+                batchApproveInputs.innerHTML = '';
+                checkedIds.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'transfer_ids[]';
+                    input.value = id;
+                    batchApproveInputs.appendChild(input);
+                });
+                
+                // 更新批量拒绝表单的隐藏输入
+                batchRejectInputs.innerHTML = '';
+                checkedIds.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'transfer_ids[]';
+                    input.value = id;
+                    batchRejectInputs.appendChild(input);
+                });
+            } else {
+                batchActions.style.display = 'none';
+            }
+        }
+
+        // 批量审批表单提交
+        if (batchApproveForm) {
+            batchApproveForm.addEventListener('submit', function(e) {
+                const checkedIds = Array.from(transferCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+                
+                if (checkedIds.length === 0) {
+                    e.preventDefault();
+                    alert('请至少选择一条调拨记录');
+                    return false;
+                }
+                
+                // 确保表单中有数据
+                updateBatchActions();
+            });
+        }
+
+        // 批量拒绝表单提交
+        if (batchRejectForm) {
+            batchRejectForm.addEventListener('submit', function(e) {
+                const checkedIds = Array.from(transferCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+                
+                if (checkedIds.length === 0) {
+                    e.preventDefault();
+                    alert('请至少选择一条调拨记录');
+                    return false;
+                }
+                
+                // 确保表单中有数据
+                updateBatchActions();
+            });
+        }
+    }
 });
 </script>
 @endpush
