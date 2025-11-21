@@ -13,6 +13,7 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Services\QiniuStorageService;
 
@@ -180,41 +181,47 @@ echo "\n";
  * 迁移入库凭证图片
  */
 echo "4. 开始迁移入库凭证图片...\n";
-$stockIns = DB::table('stock_in_records')->whereNotNull('image_path')->where('image_path', '!=', '')->get();
-$stats['stock_in']['total'] = $stockIns->count();
+// 检查 stock_in_records 表是否有 image_path 字段
+if (!Schema::hasColumn('stock_in_records', 'image_path')) {
+    echo "  ⚠ stock_in_records 表中不存在 image_path 字段，跳过入库凭证图片迁移\n";
+    $stats['stock_in']['skipped'] = 0;
+} else {
+    $stockIns = DB::table('stock_in_records')->whereNotNull('image_path')->where('image_path', '!=', '')->get();
+    $stats['stock_in']['total'] = $stockIns->count();
 
-foreach ($stockIns as $stockIn) {
-    $imagePath = $stockIn->image_path;
-    
-    // 如果已经是七牛云URL，跳过
-    if (str_starts_with($imagePath, 'http') && str_contains($imagePath, config('filesystems.disks.qiniu.domain'))) {
-        $stats['stock_in']['skipped']++;
-        continue;
-    }
-    
-    try {
-        // 获取本地文件路径
-        $localPath = storage_path('app/public/' . $imagePath);
+    foreach ($stockIns as $stockIn) {
+        $imagePath = $stockIn->image_path;
         
-        if (!file_exists($localPath)) {
-            echo "  ⚠ 文件不存在，跳过: {$imagePath}\n";
+        // 如果已经是七牛云URL，跳过
+        if (str_starts_with($imagePath, 'http') && str_contains($imagePath, config('filesystems.disks.qiniu.domain'))) {
             $stats['stock_in']['skipped']++;
             continue;
         }
         
-        // 上传到七牛云
-        $qiniuPath = 'stock-in/' . basename($imagePath);
-        $qiniuUrl = $qiniuService->put($localPath, $qiniuPath);
-        
-        // 更新数据库
-        DB::table('stock_in_records')->where('id', $stockIn->id)->update(['image_path' => $qiniuUrl]);
-        
-        echo "  ✓ 入库 #{$stockIn->id}: {$imagePath} -> {$qiniuUrl}\n";
-        $stats['stock_in']['success']++;
-        
-    } catch (\Exception $e) {
-        echo "  ✗ 入库 #{$stockIn->id} 迁移失败: {$e->getMessage()}\n";
-        $stats['stock_in']['failed']++;
+        try {
+            // 获取本地文件路径
+            $localPath = storage_path('app/public/' . $imagePath);
+            
+            if (!file_exists($localPath)) {
+                echo "  ⚠ 文件不存在，跳过: {$imagePath}\n";
+                $stats['stock_in']['skipped']++;
+                continue;
+            }
+            
+            // 上传到七牛云
+            $qiniuPath = 'stock-in/' . basename($imagePath);
+            $qiniuUrl = $qiniuService->put($localPath, $qiniuPath);
+            
+            // 更新数据库
+            DB::table('stock_in_records')->where('id', $stockIn->id)->update(['image_path' => $qiniuUrl]);
+            
+            echo "  ✓ 入库 #{$stockIn->id}: {$imagePath} -> {$qiniuUrl}\n";
+            $stats['stock_in']['success']++;
+            
+        } catch (\Exception $e) {
+            echo "  ✗ 入库 #{$stockIn->id} 迁移失败: {$e->getMessage()}\n";
+            $stats['stock_in']['failed']++;
+        }
     }
 }
 
